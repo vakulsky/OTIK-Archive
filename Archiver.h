@@ -8,17 +8,26 @@
 #include <iostream>
 #include <cstring>
 #include <vector>
-#include <clocale>
 
 #include "functions.h"
 
+#define VERSION 1
 
 using namespace std;
+
+
+struct file_header {
+     filename;
+    unsigned int filesize;
+    unsigned int version = VERSION;
+
+};
 
 class Zipper {
 
 private:
     vector<string> files;   // набор файлов (-files)
+    vector<string> headers; //headers to be written before every file in archive
     string path;            // путь (-path)
     string real_bin_file;   // имя выходного файла-архива( используется при архивации )
 public:

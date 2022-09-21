@@ -27,13 +27,13 @@ void Zipper::InCompress() {
     for (vector<string>::iterator itr = this->files.begin(); itr != this->files.end(); ++itr) {
         f = fopen((*itr).c_str(), "rb");
         if (!f) {
-            cout << *itr << " не найден!" << endl;
+            cout << *itr << " not found!" << endl;
             break;
         }
         while (!feof(f)) {
             if (fread(byte, 1, 1, f) == 1) fwrite(byte, 1, 1, main);
         }
-        cout << *itr << " добавлен в архив '" << this->real_bin_file << "'." << endl;
+        cout << *itr << " added to archive '" << this->real_bin_file << "'." << endl;
         fclose(f);
     }
     fclose(main);
@@ -126,7 +126,7 @@ void Zipper::InCompress() {
             strcpy(full_path,this->path.c_str());
             strcat(full_path,name);
             int _sz = atoi(size);
-            cout<<"--  '"<<name<<"' извлечен в '"<<this->path<<"' ."<<endl;
+            cout<<"--  '"<<name<<"' extracted to '"<<this->path<<"' ."<<endl;
             FILE *curr = fopen(full_path,"wb");
             for(int r=1;r<=_sz;r++)
             {

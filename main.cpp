@@ -14,8 +14,9 @@ int main(int argv, char* argc[])
     //
     /*/
 
-    setlocale(LC_ALL,"Russian");
-    cout<<endl<<"######################## ZIPPER ########################"<<endl<<endl;
+    cout  << argc[0] << endl << endl;
+
+    cout<<endl<<"######################## ARCHIVER ########################"<<endl<<endl;
     if(argv>1)
     {
         vector<string> files;  // массив файлов, переданных через параметры из консоли
@@ -39,11 +40,9 @@ int main(int argv, char* argc[])
         if(strcmp(type,"pack")==0) zip->InCompress();
         if(strcmp(type,"unpack")==0) zip->OutCompress(files[0]);
     }
-    else cout<<"Параметры -pack/-unpack , -files, -path обязательны!"<<endl;
+    else cout<<" -pack/-unpack , -files, -path are needed!"<<endl;
     cout<<endl<<"########################################################"<<endl<<endl;
 
 }
 
-//todo English
-//todo fix -path
 //todo separate headers
