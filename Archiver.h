@@ -10,7 +10,7 @@
 #include <vector>
 
 #define VERSION "1"
-#define SIGN "SIGN"
+#define SIGN "SVSA"
 #define HEADER_SZ 128
 #define SIGNATURE_SZ 8
 #define NAME_SZ 50
