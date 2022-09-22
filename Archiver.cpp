@@ -102,7 +102,10 @@ void Zipper::InCompress() {
 
         fseek(bin, 0, SEEK_SET);
 
-        while (!feof(bin)) {
+        while (fread(byte,1,1,bin)==1) {
+
+            //going 1 byte back after checking in "while"
+            fseek(bin, -1, SEEK_CUR);
 
             //read header from archive
             memset( &header, 0, sizeof( struct file_header ) );

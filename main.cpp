@@ -54,5 +54,3 @@ int main(int argv, char* argc[])
     cout<<endl<<"########################################################"<<endl<<endl;
 
 }
-
-//todo separate headers
