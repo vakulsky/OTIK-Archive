@@ -13,13 +13,6 @@ void Archiver::Compress() {
     FILE *f;
     FILE *main = fopen((this->archive_file).c_str(), "wb");  // opening archive
 
-    /////
-    if(!main){
-        cout << "DEBUG | cannot open archive file for writing: " << archive_file << endl;
-    }
-    /////
-
-
     // writing each file and header to archive
     for (vector<string>::iterator itr = this->files.begin(); itr != this->files.end(); ++itr) {
 
@@ -48,11 +41,6 @@ void Archiver::Compress() {
 
     file_header Archiver::buildHeader(const string file)
     {
-
-        /////
-        cout << "DEBUG | (info) inside of Archiver::buildHeader" <<  endl;
-        /////
-
         file_header header;
 
         char byte[1];
@@ -67,10 +55,6 @@ void Archiver::Compress() {
             fseek(f, 0, SEEK_END);
             int size = ftell(f);
 
-            /////
-            cout << "DEBUG | (info) filesize: " << size <<  endl;
-            /////
-
             string name = Archiver::get_file_name(file);  // get file name
 
             memset( &header, 0, sizeof( struct file_header ) );
@@ -78,14 +62,6 @@ void Archiver::Compress() {
             snprintf( header.name, NAME_SZ, "%s", name.c_str()  );
             snprintf( header.version, VERSION_SZ, "%s", VERSION );
             snprintf( header.size, SIZE_SZ, "%d", size );
-
-            /////
-            cout << "DEBUG | header.name : " << header.name << endl;
-            cout << "DEBUG | header.signature : " << header.signature << endl;
-            cout << "DEBUG | header.version : " << header.version << endl;
-            cout << "DEBUG | header.size : " << header.size << endl;
-            /////
-
         }
 
         return header;
@@ -129,23 +105,11 @@ void Archiver::Compress() {
 
                 fseek(arc, PADDING_SZ, SEEK_CUR);   //going through padding without reading
 
-                /////
-                cout << "DEBUG | header.name : " << header.name << endl;
-                cout << "DEBUG | header.signature : " << header.signature << endl;
-                cout << "DEBUG | header.version : " << header.version << endl;
-                cout << "DEBUG | header.size : " << header.size << endl;
-                /////
-
                 //extracting file
                 char full_path[255];
                 strcat(full_path, header.name);
                 int _sz = atoi(header.size);
                 FILE *curr = fopen(header.name, "wb");
-
-                /////
-                if (!curr)
-                    cout << "Can't get info of file " << curr << endl;
-                /////
 
                 for (int r = 1; r <= _sz; r++) {
                     if (fread(byte, 1, 1, arc) == 1) fwrite(byte, 1, 1, curr);
