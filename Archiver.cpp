@@ -6,27 +6,26 @@
 
 using namespace std;
 
-void Zipper::InCompress() {
-    char byte[1];  // единичный буфер для считывания одного байта
+void Archiver::Compress() {
+    char byte[1];  // buffer for reading 1 byte
 
     file_header header;
     FILE *f;
-    FILE *main = fopen((this->real_bin_file).c_str(), "wb");  // файл - архив
+    FILE *main = fopen((this->archive_file).c_str(), "wb");  // opening archive
 
     /////
     if(!main){
-        cout << "DEBUG | cannot open archive file for writing: " << real_bin_file <<  endl;
+        cout << "DEBUG | cannot open archive file for writing: " << archive_file << endl;
     }
     /////
 
-    //todo write header for each file in a loop
 
-
-    // последовательная запись в архив архивируемых файлов побайтно :
+    // writing each file and header to archive
     for (vector<string>::iterator itr = this->files.begin(); itr != this->files.end(); ++itr) {
 
-        header = getInfo(*itr);
+        header = buildHeader(*itr);
 
+        //open file
         f = fopen((*itr).c_str(), "rb");
         if (!f) {
             cout << *itr << " not found!" << endl;
@@ -40,23 +39,23 @@ void Zipper::InCompress() {
         while (!feof(f)) {
             if (fread(byte, 1, 1, f) == 1) fwrite(byte, 1, 1, main);
         }
-        cout << *itr << " added to archive '" << this->real_bin_file << "'." << endl;
+        cout << *itr << " added to archive '" << this->archive_file << "'." << endl;
         fclose(f);
     }
     fclose(main);
 }
 
 
-    file_header Zipper::getInfo(const string file)
+    file_header Archiver::buildHeader(const string file)
     {
 
         /////
-        cout << "DEBUG | (info) inside of Zipper::getInfo" <<  endl;
+        cout << "DEBUG | (info) inside of Archiver::buildHeader" <<  endl;
         /////
 
         file_header header;
 
-        char byte[1];  // единичный буфер для считывания одного байта
+        char byte[1];
 
         //openning file
         FILE *f = fopen(file.c_str(),"rb");
@@ -64,7 +63,7 @@ void Zipper::InCompress() {
             cout << "Can't get info of file " << file << endl;
         else {
 
-            // получаем размер архивируемого файла
+            // get file size
             fseek(f, 0, SEEK_END);
             int size = ftell(f);
 
@@ -72,7 +71,7 @@ void Zipper::InCompress() {
             cout << "DEBUG | (info) filesize: " << size <<  endl;
             /////
 
-            string name = Zipper::get_file_name(file);  // получаем имя архивируемого файла
+            string name = Archiver::get_file_name(file);  // get file name
 
             memset( &header, 0, sizeof( struct file_header ) );
             snprintf( header.signature, SIGNATURE_SZ, "%s", SIGN  );
@@ -93,50 +92,69 @@ void Zipper::InCompress() {
     }
 
 
-    void Zipper::OutCompress(const string& binary)
+    void Archiver::Extract(const string& archive_file)
     {
-        FILE *bin = fopen(binary.c_str(),"rb");   // открываем архив в режиме чтения
-
-        char byte[1];
-        file_header header{};
-
-        fseek(bin, 0, SEEK_SET);
-
-        while (fread(byte,1,1,bin)==1) {
-
-            //going 1 byte back after checking in "while"
-            fseek(bin, -1, SEEK_CUR);
-
-            //read header from archive
-            memset( &header, 0, sizeof( struct file_header ) );
-            fread(header.signature,SIGNATURE_SZ, 1,bin);
-            fread(header.name,NAME_SZ,1,bin);
-            fread(header.version,VERSION_SZ,1,bin);
-            fread(header.size,SIZE_SZ,1,bin);
-
-            fseek(bin, PADDING_SZ, SEEK_CUR);
-
-            /////
-            cout << "DEBUG | header.name : " << header.name << endl;
-            cout << "DEBUG | header.signature : " << header.signature << endl;
-            cout << "DEBUG | header.version : " << header.version << endl;
-            cout << "DEBUG | header.size : " << header.size << endl;
-            /////
-
-            //read file
-            char full_path[255];
-            strcpy(full_path,this->path.c_str());
-            strcat(full_path,header.name);
-            int _sz = atoi(header.size);
-            cout<<"--  '"<<header.name<<"' extracted to '"<<this->path<<"' ."<<endl;
-            FILE *curr = fopen(full_path,"wb");
-            for(int r=1;r<=_sz;r++)
-            {
-                if(fread(byte,1,1,bin)==1) fwrite(byte,1,1,curr);
-            }
-            fclose(curr);
-
+        FILE *arc = fopen(archive_file.c_str(), "rb");   // open archive file
+        if(!arc) {
+            cout << "Can't open archive file " << archive_file << endl;
         }
-        fclose(bin);
+        else {
+
+            char byte[1];
+            file_header header{};
+
+            fseek(arc, 0, SEEK_SET);
+
+            while (fread(byte, 1, 1, arc) == 1) {
+
+                //going 1 byte back after checking in "while"
+                fseek(arc, -1, SEEK_CUR);
+
+                //read header from archive
+                memset(&header, 0, sizeof(struct file_header));
+                fread(header.signature, SIGNATURE_SZ, 1, arc);
+                fread(header.name, NAME_SZ, 1, arc);
+                fread(header.version, VERSION_SZ, 1, arc);
+                fread(header.size, SIZE_SZ, 1, arc);
+
+                if (strcmp(header.signature, SIGN) != 0) {
+                    cout << "Error: Signature mismatch!" << endl;
+                    break;
+                }
+
+                if (strcmp(header.version, VERSION) != 0) {
+                    cout << "Error: Incompatible version!" << endl;
+                    break;
+                }
+
+                fseek(arc, PADDING_SZ, SEEK_CUR);   //going through padding without reading
+
+                /////
+                cout << "DEBUG | header.name : " << header.name << endl;
+                cout << "DEBUG | header.signature : " << header.signature << endl;
+                cout << "DEBUG | header.version : " << header.version << endl;
+                cout << "DEBUG | header.size : " << header.size << endl;
+                /////
+
+                //extracting file
+                char full_path[255];
+                strcat(full_path, header.name);
+                int _sz = atoi(header.size);
+                FILE *curr = fopen(header.name, "wb");
+
+                /////
+                if (!curr)
+                    cout << "Can't get info of file " << curr << endl;
+                /////
+
+                for (int r = 1; r <= _sz; r++) {
+                    if (fread(byte, 1, 1, arc) == 1) fwrite(byte, 1, 1, curr);
+                }
+                fclose(curr);
+                cout << "--- " << header.name << " is extracted ---" << endl;
+
+            }
+            fclose(arc);
+        }
 
     }

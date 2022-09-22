@@ -9,8 +9,6 @@
 #include <cstring>
 #include <vector>
 
-#include "functions.h"
-
 #define VERSION "1"
 #define SIGN "SIGN"
 #define HEADER_SZ 128
@@ -33,31 +31,26 @@ struct file_header {
 
 };
 
-class Zipper {
+class Archiver {
 
 private:
     vector<string> files; //headers to be written before every file in archive
-    string path;            // путь (-path)
-    string real_bin_file;   // имя выходного файла-архива( используется при архивации )
+    string archive_file;   // archive file path
 public:
-    Zipper(vector<string> &vec, string p) {
+    Archiver(vector<string> &vec, string path) {
         if (vec.size() > 0) files.assign(vec.begin(), vec.end());
-        real_bin_file = p;
+        archive_file = path;
     }
 
 
-    file_header getInfo(const string file);   // Метод для получения информации о файлах на этапе архивации
-    void InCompress();   // Архивация данных
-    void OutCompress(const string& binary);   // Распаковка данных ( binary - путь до архива )
+    file_header buildHeader(const string file);
+    void Compress();
+    void Extract(const string& archive_file);
 
-// Статический метод для выделения имени файла из полного пути.
-// Используется для внутренних нужд.
-    static string get_file_name(string fn) {
-        return fn.substr(fn.find_last_of("\\") + 1, fn.size());
+    static string get_file_name(string filename) {
+        return filename.substr(filename.find_last_of("\\") + 1, filename.size());
     }
 
 };
-
-
 
 #endif //OTIK_ARCHIVE_ARCHIVER_H

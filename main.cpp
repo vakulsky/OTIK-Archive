@@ -8,21 +8,16 @@
 
 int main(int argv, char* argc[])
 {
-    /*/  Supported args:
-    //
-    //    -pack, -unpack, -files, -path
-    //
-    /*/
 
     cout  << argc[0] << endl << endl;
 
-    cout<<endl<<"######################## ARCHIVER ########################"<<endl<<endl;
+    cout<<endl<<"------------------------ ARCHIVER ------------------------"<<endl<<endl;
     if(argv>1)
     {
-        vector<string> files;  // массив файлов, переданных через параметры из консоли
-        string path = "";  // путь
-        bool flag_fs = false, flag_path = false;  // флаги режима чтения/записи
-        char type[7];              // тип: упаковка или распаковка
+        vector<string> files;  //files from console
+        string path = "";  // path
+        bool flag_fs = false, flag_path = false;  // flags
+        char type[7];              // flag container
         memset(type,0,7);
 
         for(int i=1;i<argv;i++)
@@ -46,11 +41,16 @@ int main(int argv, char* argc[])
         cout << "DEBUG | (var) path: " << path << endl;
         /////
 
-        Zipper *zip = new Zipper(files,path);
-        if(strcmp(type,"pack")==0) zip->InCompress();
-        if(strcmp(type,"unpack")==0) zip->OutCompress(files[0]);
+        Archiver *zip = new Archiver(files, path);
+        if(strcmp(type,"pack")==0) zip->Compress();
+        if(strcmp(type,"unpack")==0) zip->Extract(files[0]);
     }
-    else cout<<" -pack/-unpack , -files, -path are needed!"<<endl;
-    cout<<endl<<"########################################################"<<endl<<endl;
+    else {
+        cout << "USAGE:" << endl;
+        cout << "-pack -files <files to compress> -path <folder_to_save_archive_file>" << endl;
+        cout << "OR" << endl;
+        cout << "-unpack -files <archive_file> -path <path for extracted files>" << endl;
+    }
+    cout<<endl<<"----------------------------------------------------------"<<endl<<endl;
 
 }
