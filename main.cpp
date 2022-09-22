@@ -35,7 +35,17 @@ int main(int argv, char* argc[])
             if(flag_path) {path.assign(argc[i]); }
             if(flag_fs) files.push_back(string(argc[i]));
 
+            /////
+            if(flag_fs)
+                cout << "DEBUG |  filename: " << argc[i] << endl;
+            /////
+
         }
+
+        /////
+        cout << "DEBUG | (var) path: " << path << endl;
+        /////
+
         Zipper *zip = new Zipper(files,path);
         if(strcmp(type,"pack")==0) zip->InCompress();
         if(strcmp(type,"unpack")==0) zip->OutCompress(files[0]);

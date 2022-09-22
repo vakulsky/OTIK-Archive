@@ -9,27 +9,34 @@ using namespace std;
 void Zipper::InCompress() {
     char byte[1];  // единичный буфер для считывания одного байта
 
-    getInfo();  // получаем необходимую информацию о том, что архивируем
-
+    file_header header;
     FILE *f;
     FILE *main = fopen((this->real_bin_file).c_str(), "wb");  // файл - архив
-    FILE *info = fopen((this->path + "info.txt").c_str(), "rb");  // файл с информацией
 
-    // переписываем информацию в архив
-    while (!feof(info)) {
-        if (fread(byte, 1, 1, info) == 1) fwrite(byte, 1, 1, main);
+    /////
+    if(!main){
+        cout << "DEBUG | cannot open archive file for writing: " << real_bin_file <<  endl;
     }
+    /////
 
-    fclose(info);
-    remove((this->path + "info.txt").c_str());  // прибираемся за собой
+    //todo write header for each file in a loop
+
 
     // последовательная запись в архив архивируемых файлов побайтно :
     for (vector<string>::iterator itr = this->files.begin(); itr != this->files.end(); ++itr) {
+
+        header = getInfo(*itr);
+
         f = fopen((*itr).c_str(), "rb");
         if (!f) {
             cout << *itr << " not found!" << endl;
             break;
         }
+
+        //write header
+        fwrite( reinterpret_cast<const unsigned char *>(&header), 1, sizeof( struct file_header ), main );
+
+        //write file data
         while (!feof(f)) {
             if (fread(byte, 1, 1, f) == 1) fwrite(byte, 1, 1, main);
         }
@@ -40,93 +47,85 @@ void Zipper::InCompress() {
 }
 
 
-    void Zipper::getInfo()
+    file_header Zipper::getInfo(const string file)
     {
+
+        /////
+        cout << "DEBUG | (info) inside of Zipper::getInfo" <<  endl;
+        /////
+
+        file_header header;
+
         char byte[1];  // единичный буфер для считывания одного байта
 
-        basic_string<char> s_info = "";
-        remove((this->path+"info.txt").c_str());  // на всякий случай
-        FILE *info = fopen((this->path+"info.txt").c_str(),"a+");  // сохраняем информацию в наш текстовый файл
-        int bytes_size=0;  // длина информационного блока в байтах
-        for(vector<string>::iterator itr=this->files.begin();itr!=this->files.end();++itr)
-        {
-            FILE *f = fopen((*itr).c_str(),"rb");
-            if(!f) break;
+        //openning file
+        FILE *f = fopen(file.c_str(),"rb");
+        if(!f)
+            cout << "Can't get info of file " << file << endl;
+        else {
 
             // получаем размер архивируемого файла
-            fseek(f,0,SEEK_END);
+            fseek(f, 0, SEEK_END);
             int size = ftell(f);
 
-            string name = Zipper::get_file_name(*itr);  // получаем имя архивируемого файла
+            /////
+            cout << "DEBUG | (info) filesize: " << size <<  endl;
+            /////
 
-            char *m_size = new char[digs(size)+1];
-            itoa(size,m_size,10);
-            fclose(f);
+            string name = Zipper::get_file_name(file);  // получаем имя архивируемого файла
 
-            bytes_size+=digs(size);
-            bytes_size+=strlen(name.c_str());
+            memset( &header, 0, sizeof( struct file_header ) );
+            snprintf( header.signature, SIGNATURE_SZ, "%s", SIGN  );
+            snprintf( header.name, NAME_SZ, "%s", name.c_str()  );
+            snprintf( header.version, VERSION_SZ, "%s", VERSION );
+            snprintf( header.size, SIZE_SZ, "%d", size );
 
-            // все, что "нарыли", сохраняем в промежуточный буфер :
-            s_info.append(m_size);
-            s_info.append("||");
-            s_info.append(name);
-            s_info.append("||");
-
-            delete [] m_size;
+            /////
+            cout << "DEBUG | header.name : " << header.name << endl;
+            cout << "DEBUG | header.signature : " << header.signature << endl;
+            cout << "DEBUG | header.version : " << header.version << endl;
+            cout << "DEBUG | header.size : " << header.size << endl;
+            /////
 
         }
-        bytes_size = s_info.size()+2;
-        char *b_buff = new char[digs(bytes_size)];
-        itoa(bytes_size,b_buff,10);
 
-        // форматируем до 5 байт
-        if(digs(bytes_size)<5) fputs(string(5-digs(bytes_size),'0').c_str(),info);
-
-        fputs(b_buff,info);
-        fputs("||",info);
-        fputs(s_info.c_str(),info);
-
-        fclose(info);
+        return header;
     }
 
 
-    void Zipper::OutCompress(string binary)
+    void Zipper::OutCompress(const string& binary)
     {
         FILE *bin = fopen(binary.c_str(),"rb");   // открываем архив в режиме чтения
-        char info_block_size[5];   // размер информационного блока
-        fread(info_block_size,1,5,bin);  // получаем размер
-        int _sz = atoi(info_block_size);  // преобразуем буфер в число
 
-        char *info_block = new char[_sz];  // информационный блок
-        fread(info_block,1,_sz,bin);   // считываем его
+        char byte[1];
+        file_header header{};
 
-        // Парсинг информационного блока :
-        vector<string> tokens;
-        char *tok = strtok(info_block,"||");
-        int toks = 0;
-        while(tok)
-        {
-            if(strlen(tok)==0) break;
-            tokens.push_back(tok);
-            tok=strtok(NULL,"||");
-            toks++;
-        }
+        fseek(bin, 0, SEEK_SET);
 
-        if(toks%2==1) toks--;  // удаляем мусор
-        int files=toks/2;  // количество обнаруженных файлов в архиве
+        while (!feof(bin)) {
 
-        char byte[1];   // единичный буфер для считывания одного байта
+            //read header from archive
+            memset( &header, 0, sizeof( struct file_header ) );
+            fread(header.signature,SIGNATURE_SZ, 1,bin);
+            fread(header.name,NAME_SZ,1,bin);
+            fread(header.version,VERSION_SZ,1,bin);
+            fread(header.size,SIZE_SZ,1,bin);
 
-        // Процесс распаковки всех файлов( по правилам полученным из блока с информацией ) :
-        for(int i=0;i<files;i++)
-        {
-            const char* size = tokens[i*2].c_str();
-            const char* name = tokens[i*2+1].c_str();
+            fseek(bin, PADDING_SZ, SEEK_CUR);
+
+            /////
+            cout << "DEBUG | header.name : " << header.name << endl;
+            cout << "DEBUG | header.signature : " << header.signature << endl;
+            cout << "DEBUG | header.version : " << header.version << endl;
+            cout << "DEBUG | header.size : " << header.size << endl;
+            /////
+
+            //read file
             char full_path[255];
             strcpy(full_path,this->path.c_str());
-            strcat(full_path,name);
-            int _sz = atoi(size);
-            cout<<"--  '"<<name<<"' extracted to '"<<this->path<<"' ."<<endl;
+            strcat(full_path,header.name);
+            int _sz = atoi(header.size);
+            cout<<"--  '"<<header.name<<"' extracted to '"<<this->path<<"' ."<<endl;
             FILE *curr = fopen(full_path,"wb");
             for(int r=1;r<=_sz;r++)
             {
@@ -134,8 +133,6 @@ void Zipper::InCompress() {
             }
             fclose(curr);
 
-            delete [] size;
-            delete [] name;
         }
         fclose(bin);
 
