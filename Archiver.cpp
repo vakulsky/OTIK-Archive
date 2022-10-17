@@ -39,13 +39,12 @@ void Archiver::Compress() {
 }
 
 
-    file_header Archiver::buildHeader(const string file)
+    file_header Archiver::buildHeader(const string file, const int codeTableSize)
     {
         file_header header;
 
         char byte[1];
 
-        //openning file
         FILE *f = fopen(file.c_str(),"rb");
         if(!f)
             cout << "Can't get info of file " << file << endl;
@@ -57,11 +56,13 @@ void Archiver::Compress() {
 
             string name = Archiver::get_file_name(file);  // get file name
 
-            memset( &header, 0, sizeof( struct file_header ) );
-            snprintf( header.signature, SIGNATURE_SZ, "%s", SIGN  );
-            snprintf( header.name, NAME_SZ, "%s", name.c_str()  );
-            snprintf( header.version, VERSION_SZ, "%s", VERSION );
-            snprintf( header.size, SIZE_SZ, "%d", size );
+            memset(&header, 0, sizeof(struct file_header));
+            snprintf(header.signature, SIGNATURE_SZ, "%s", SIGN);
+            snprintf(header.name, NAME_SZ, "%s", name.c_str());
+            snprintf(header.version, VERSION_SZ, "%s", VERSION);
+            snprintf(header.size, SIZE_SZ, "%d", size);
+            snprintf(header.algorithm, ALGORITHM_SZ, "%d", algorithmCode);
+            snprintf(header.codeTableSize, TABLE_SZ, "%d", codeTableSize);
         }
 
         return header;
@@ -122,3 +123,139 @@ void Archiver::Compress() {
         }
 
     }
+
+int Archiver::CompressShannon(){
+
+    //vector of {symbol, {frequency, code}}
+    vector<pair<string, pair<int, string>>> symbols;
+    ifstream f;
+    string str;
+    int symbolsAmount=0;
+
+    f.open(archive_file);
+    if(!f)
+        cout << "Can't read file " << archive_file << endl;
+    else {
+        while (getline(f, str)) {
+            vector<string> syms = divideString(str);
+            for(int i = 0; i < syms.size(); i++){
+                analyzeUTF8(symbols, syms[i]);
+                symbolsAmount += 1;
+            }
+        };
+        f.close();
+
+        shannonCodes(symbols, symbolsAmount);
+
+    }
+
+}
+
+
+void CompressWrapper(){
+
+}
+void ExtractWrapper(){
+
+}
+
+void ExtractShannon(const string& archive_file){
+
+//todo somehow read codes
+
+
+}
+
+
+void Archiver::analyzeUTF8(vector<pair<string, pair<int, string>>>& symbols, const string& currentSymbol){
+    bool found = false;
+    for(auto symbol : symbols){
+        if(symbol.first == currentSymbol){
+            //symbol is in the list, so increasing the amount
+            symbol.second.first++;
+            found = true;
+        }
+    }
+    if(!found) {
+        //symbol was not found in the list, adding it
+        symbols.emplace_back(make_pair(currentSymbol, make_pair(1, "")));
+    }
+}
+
+void Archiver::shannonCodes(vector<pair<std::string, pair<int, std::string>>> &symbols, int symbolsAmount) {
+    for(int i = 0; i < symbols.size(); i++){
+        int freqSum = 0;
+
+        int codeLength = ceil(-log2(symbols[i].second.first));
+
+        for(int j = 0; j < i; j++){
+            freqSum += symbols[i].second.first;
+        }
+        double probabilitySum = (double)freqSum/symbolsAmount;
+
+        //calculating code
+        double fraction = probabilitySum - (int)(probabilitySum / symbolsAmount);
+        for(int k = 0; k < codeLength; k++){
+            symbols[i].second.second += to_string((int)(fraction*2));
+            if(fraction*2 > 1){
+                fraction = fraction - 1;
+            }
+        }
+    }
+}
+
+void Archiver::writeShannon(const string& file, vector<pair<std::string, pair<int, std::string>>> &codes){
+    char byte[1];  // buffer for reading 1 byte
+
+    file_header header;
+    ifstream f;
+    ofstream main;
+    string str;
+    main.open(archive_file, ios_base::binary);  // opening archive
+
+    string codeTable = buildShannonTable(codes);
+
+
+    //writing file and header to archive
+    header = buildHeader(file, sizeof codeTable);
+
+    //todo write table
+    //todo write codes
+
+
+    f.open(file, ios_base::in);
+    if(!f)
+        cout << "Can't read file " << file << endl;
+    else {
+        while (getline(f, str)) {
+            vector<string> syms = divideString(str);
+            for (int i = 0; i < syms.size(); i++) {
+                analyzeUTF8(symbols, syms[i]);
+                symbolsAmount += 1;
+            }
+        };
+        f.close();
+    }
+
+    //write header
+    fwrite( reinterpret_cast<const unsigned char *>(&header), 1, sizeof( struct file_header ), main );
+
+    //write file data
+    while (!feof(f)) {
+        if (fread(byte, 1, 1, f) == 1) fwrite(byte, 1, 1, main);
+    }
+    cout << *itr << " added to archive '" << this->archive_file << "'." << endl;
+    fclose(f);
+
+    fclose(main);
+}
+
+string Archiver::buildShannonTable(const vector<pair<string, pair<int, string>>>& codes){
+    string table;
+
+    for(auto code : codes){
+        table += code.first + " " + code.second.second + "\n";
+    }
+}
+
+

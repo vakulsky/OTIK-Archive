@@ -23,6 +23,7 @@ int main(int argv, char* argc[])
         for(int i=1;i<argv;i++)
         {
             if(strcmp(argc[i],"-pack")==0) { strcpy(type,"pack"); flag_fs=flag_path=false;}
+            //todo choose between normal pack, Shannon and intelligent
             if(strcmp(argc[i],"-unpack")==0) { strcpy(type,"unpack"); flag_fs=flag_path=false;}
             if(strcmp(argc[i],"-path")==0) {flag_path=true; flag_fs=false; continue; }
             if(strcmp(argc[i],"-files")==0) {flag_fs=true; flag_path=false; continue; }
