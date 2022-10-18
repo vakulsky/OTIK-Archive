@@ -64,7 +64,7 @@ void Archiver::Compress(CompressType type) {
                 }
 
                 if (strcmp(header.algorithm, "1") == 0) {
-                    shannonCompressor.Extract();
+                    shannonCompressor.Extract(archiveFile, header);
                 }
                 else if(strcmp(header.algorithm, "0") == 0)
                     packer.Unpack(archiveFile, header);
@@ -79,6 +79,8 @@ void Archiver::Compress(CompressType type) {
     }
 
 void intelligentArchive(){
+
+    //todo intelligentArchive
 
 }
 

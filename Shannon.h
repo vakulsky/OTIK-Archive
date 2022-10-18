@@ -11,21 +11,19 @@
 #include <fstream>
 #include <cmath>
 #include "fileHeader.h"
+#include <algorithm>
 
 using namespace std;
 
 class Shannon {
+private:
+    //{symbol, {frequency, code}}
+    vector<pair<string, pair<int, string>>> codes;
+    int symbolsAmount;
 
-
-    int CompressShannon();
-    void ExtractShannon(const string& archive_file);
-    void CompressWrapper();
-    void ExtractWrapper();
-    string buildShannonTable(const vector<pair<string, pair<int, string>>>& codes);
-
-    void analyzeUTF8(vector<pair<string, pair<int, string>>>& symbols, const string& currentSymbol);
-    void shannonCodes(vector<pair<string, pair<int, string>>>& symbols, int symbolsAmount);
-    void writeShannon(const string& file, vector<pair<std::string, pair<int, std::string>>> &codes);
+    void analyzeUTF8(const string& currentSymbol);
+    void shannonCodes();
+    void writeToFile();
 
 
     static vector<string> divideString(const string& text){
@@ -43,6 +41,21 @@ class Shannon {
         }
         return array;
     }
+
+public:
+    int Compress(const string& file, const string& archiveName);
+    void Extract(FILE* archiveFile, file_header& header);
+
+
+
+
+    //comparators to sort symbols array
+    struct frequencyDescending
+    {
+        inline bool operator() (const pair<string, pair<int, string>>& a, const pair<string, pair<int, string>>& b) {
+            return (a.second.first > b.second.first);
+        }
+    };
 
 };
 

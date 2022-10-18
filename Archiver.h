@@ -30,8 +30,6 @@ public:
         if (vec.size() > 0) files.assign(vec.begin(), vec.end());
         archive_file = path;
         algorithmCode = 0;
-        packer = new Packer(files, archive_file);
-        shannonCompressor = new Shannon(files, archive_file);
     }
 
     void Compress(CompressType);

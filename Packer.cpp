@@ -23,6 +23,9 @@ int Packer::Pack(const string& file, const string& archiveName) {
         return 0;
     }
 
+    //add new file to the end of archive file
+    fseek(main, 0, SEEK_END);
+
     //write header
     fwrite( reinterpret_cast<const unsigned char *>(&header), 1, sizeof( struct file_header ), main );
 
