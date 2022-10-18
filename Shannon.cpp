@@ -22,12 +22,19 @@ int Shannon::Compress(const string& file, const string& archiveName){
             vector<string> syms = divideString(str);
             for(auto & sym : syms){
                 analyzeUTF8(sym);
-                symbolsAmount += 1;
+                symbolsAmount++;
             }
         };
         f.close();
 
         shannonCodes();
+
+        /////
+        for(auto & code : codes){
+            cout << "DEBUG| (codes): " << code.first << " | " << code.second.first << " | " << code.second.second << endl;
+        }
+        /////
+
         file_header header = buildHeader(file);
         writeToFile(file, archiveName, header);
 
@@ -40,7 +47,7 @@ int Shannon::Compress(const string& file, const string& archiveName){
 
 void Shannon::analyzeUTF8(const string& currentSymbol){
     bool found = false;
-    for(auto symbol : codes){
+    for(auto & symbol : codes){
         if(symbol.first == currentSymbol){
             //symbol is in the list, so increasing the amount
             symbol.second.first++;
@@ -71,6 +78,14 @@ void Shannon::shannonCodes() {
 
         //calculating code
         double fraction = probabilitySum - (int) (probabilitySum / symbolsAmount);
+
+        /////
+        cout << "DEBUG| (shannonCodes fun): " << codes[i].first << endl;
+        cout << "DEBUG| (freq sum): " << freqSum << endl;
+        cout << "DEBUG| (code length): " << codeLength << endl;
+        cout << "DEBUG| (fraction): " << fraction << endl;
+        /////
+
         for (int k = 0; k < codeLength; k++) {
             codes[i].second.second += to_string((int) (fraction * 2));
             if ( fraction * 2 > 1 ) {
@@ -78,6 +93,10 @@ void Shannon::shannonCodes() {
             }
         }
     }
+
+    /////
+    cout << "DEBUG| (syms amount): " << symbolsAmount << endl;
+    /////
 }
 
 file_header Shannon::buildHeader(const string& file)
