@@ -65,6 +65,7 @@ file_header Packer::buildHeader(const string file)
         snprintf( header.name, NAME_SZ, "%s", name.c_str()  );
         snprintf( header.version, VERSION_SZ, "%s", VERSION );
         snprintf( header.size, SIZE_SZ, "%d", size );
+        snprintf( header.algorithm, ALGORITHM_SZ, "%d", 0 );
     }
 
     return header;

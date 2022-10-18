@@ -23,7 +23,8 @@ private:
 
     void analyzeUTF8(const string& currentSymbol);
     void shannonCodes();
-    void writeToFile();
+    void writeToFile(const string& file, const string& archiveName, file_header& header);
+    file_header buildHeader(const string& file);
 
 
     static vector<string> divideString(const string& text){

@@ -78,7 +78,7 @@ void Archiver::Compress(CompressType type) {
 
     }
 
-void intelligentArchive(){
+void Archiver::intelligentArchive(){
 
     //todo intelligentArchive
 
