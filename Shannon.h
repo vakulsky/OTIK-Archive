@@ -6,6 +6,7 @@
 #define OTIK_ARCHIVE_SHANNON_H
 
 #include <iostream>
+#include <string>
 #include <cstring>
 #include <vector>
 #include <fstream>
@@ -23,7 +24,7 @@ private:
 
     void analyzeUTF8(const string& currentSymbol);
     void shannonCodes();
-    void writeToFile(const string& file, const string& archiveName, file_header& header);
+    int writeToFile(const string& file, const string& archiveName, file_header& header);
     file_header buildHeader(const string& file);
 
 
@@ -41,6 +42,13 @@ private:
             i += cplen;
         }
         return array;
+    }
+
+    void parseCode(const string& str){
+        codes.emplace_back(make_pair(str.substr(0, 1),
+                                     make_pair(1,
+                                                  str.substr(2, str.find('\n')-2))));
+
     }
 
 public:

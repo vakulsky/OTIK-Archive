@@ -9,8 +9,6 @@
 int main(int argv, char* argc[])
 {
 
-    cout  << argc[0] << endl << endl;
-
     cout<<endl<<"------------------------ ARCHIVER ------------------------"<<endl<<endl;
     if(argv>1)
     {

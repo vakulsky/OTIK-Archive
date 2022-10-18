@@ -53,10 +53,18 @@ void Archiver::Compress(CompressType type) {
 
                 fseek(archiveFile, PADDING_SZ, SEEK_CUR);   //going through padding without reading
 
+
+                /////
+                cout << "DEBUG | (sign from file): " << string(header.signature) << endl;
+                cout << "DEBUG | (version from file): " << string(header.version) << endl;
+                cout << "DEBUG | (alg code from file): " << string(header.algorithm) << endl;
+                /////
+
                 if (strcmp(header.signature, SIGN) != 0) {
                     cout << "Error: Signature mismatch!" << endl;
                     break;
                 }
+
 
                 if (strcmp(header.version, VERSION) != 0) {
                     cout << "Error: Incompatible version!" << endl;
@@ -65,11 +73,14 @@ void Archiver::Compress(CompressType type) {
 
                 if (strcmp(header.algorithm, "1") == 0) {
                     shannonCompressor.Extract(archiveFile, header);
+                    break;
                 }
                 else if(strcmp(header.algorithm, "0") == 0)
                     packer.Unpack(archiveFile, header);
-                else
+                else {
                     cout << "Error: Invalid algorithm code!" << endl;
+                    break;
+                }
 
 
             }

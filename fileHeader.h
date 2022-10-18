@@ -12,8 +12,8 @@
 #define NAME_SZ 50
 #define VERSION_SZ 8
 #define SIZE_SZ 12
-#define ALGORITHM_SZ 1
-#define PADDING_SZ 41
+#define ALGORITHM_SZ 6
+#define PADDING_SZ 44
 
 struct file_header {
     char signature[SIGNATURE_SZ];

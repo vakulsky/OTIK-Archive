@@ -8,6 +8,7 @@ int Shannon::Compress(const string& file, const string& archiveName){
 
     ifstream f;
     string str;
+    int compressedSize = 0;
 
     codes.clear();
     symbolsAmount = 0;
@@ -15,7 +16,7 @@ int Shannon::Compress(const string& file, const string& archiveName){
     f.open(file);
     if(!f) {
         cout << "Can't read file " << file << endl;
-        return 0;
+        return compressedSize;
     }
     else {
         while (getline(f, str)) {
@@ -36,9 +37,9 @@ int Shannon::Compress(const string& file, const string& archiveName){
         /////
 
         file_header header = buildHeader(file);
-        writeToFile(file, archiveName, header);
+        compressedSize = writeToFile(file, archiveName, header);
 
-        return atoi(header.size);
+        return compressedSize;
 
     }
 
@@ -107,6 +108,7 @@ file_header Shannon::buildHeader(const string& file)
     int size = 0;
 
     for(const auto& sym : codes){
+        //counting coded text
         size += sym.second.first * sym.second.second.size();
     }
 
@@ -116,13 +118,13 @@ file_header Shannon::buildHeader(const string& file)
     snprintf( header.name, NAME_SZ, "%s", file.c_str()  );
     snprintf( header.version, VERSION_SZ, "%s", VERSION );
     snprintf( header.size, SIZE_SZ, "%d", size );
-    snprintf( header.algorithm, ALGORITHM_SZ, "%d", 1 );
+    snprintf( header.algorithm, ALGORITHM_SZ, "%s", "1" );
 
 
     return header;
 }
 
-void Shannon::writeToFile(const string& file, const string& archiveName, file_header& header) {
+int Shannon::writeToFile(const string& file, const string& archiveName, file_header& header) {
 
     ofstream archive;
     ifstream fileStream;
@@ -131,24 +133,27 @@ void Shannon::writeToFile(const string& file, const string& archiveName, file_he
     archive.open(archiveName);
     if (!archive) {
         cout << "Can't open file " << archiveName << endl;
+        return 0;
     } else {
 
-        archive.seekp(ios_base::end);
+//       archive.seekp(ios_base::end);
 
         //writing header
-        archive << header.signature
-                << header.name
-                << header.version
-                << header.size
-                << header.algorithm
-                << header.padding;
+        archive.write(header.signature, sizeof(header.signature));
+        archive.write(header.name, sizeof(header.name));
+        archive.write(header.version, sizeof(header.version));
+        archive.write(header.size, sizeof(header.size));
+        archive.write(header.algorithm, sizeof(header.algorithm));
+        archive.write(header.padding, sizeof(header.padding));
+
+        auto size = archive.tellp();
 
         //writing table size (symbols in table)
         archive << codes.size() << endl;
 
         //writing table
         for (auto code: codes) {
-            archive << code.first << " " << code.second.second << endl;
+            archive << code.first  << code.second.second << endl;
         }
 
         fileStream.open(file);
@@ -171,12 +176,61 @@ void Shannon::writeToFile(const string& file, const string& archiveName, file_he
 
 
         };
+        size = archive.tellp() - size;
         archive.close();
+
+        return size;
     }
 }
 
 void Shannon::Extract(FILE *archiveFile, file_header &header) {
 
-//todo somehow read codes
+    char symbolsInTable[10];
+    char byte[1];
+    string accum;
+    ofstream extractedFile;
+    extractedFile.open(header.name);
+
+    fgets(symbolsInTable, sizeof symbolsInTable, archiveFile);
+
+    /////
+    cout << "DEBUG | (syms in table): " << atoi(symbolsInTable) << endl;
+    /////
+
+    codes.clear();
+    for(int i = 0; i < atoi(symbolsInTable); i++){
+        char str[20];
+        fgets(str, sizeof str, archiveFile);
+        parseCode(string(str));
+    }
+
+    /////
+    cout << "DEBUG | CODES FROM ARCHIVE" << endl;
+    for(auto code : codes){
+        cout << code.first << " | " << code.second.second << endl;
+    }
+    /////
+
+    while (fread(byte, 1, 1, archiveFile) == 1) {
+        accum += byte[0];
+
+        /////
+        cout << "DEBUG | (accum): " << accum << endl;
+        /////
+
+        for(const auto& sym : codes){
+            if(accum == sym.second.second){  //todo not working
+
+                /////
+                cout << "DEBUG | (matched): " << accum << " --> " << sym.first << endl;
+                /////
+
+                extractedFile << sym.first;
+                accum.clear();
+            }
+        }
+
+    }
+    extractedFile.close();
 
 }
