@@ -77,18 +77,20 @@ void Shannon::shannonCodes() {
         double probabilitySum = (double) freqSum / symbolsAmount;
 
         //calculating code
-        double fraction = probabilitySum - (int) (probabilitySum / symbolsAmount);
+        double fraction = probabilitySum - (int) (probabilitySum);
 
         /////
-        cout << "DEBUG| (shannonCodes fun): " << codes[i].first << endl;
+        cout << "DEBUG| (shannonCodes fun (sym)): " << codes[i].first << endl;
         cout << "DEBUG| (freq sum): " << freqSum << endl;
         cout << "DEBUG| (code length): " << codeLength << endl;
         cout << "DEBUG| (fraction): " << fraction << endl;
+        cout << "DEBUG| (prob sum): " << probabilitySum << endl;
         /////
 
         for (int k = 0; k < codeLength; k++) {
-            codes[i].second.second += to_string((int) (fraction * 2));
-            if ( fraction * 2 > 1 ) {
+            fraction = fraction * 2;
+            codes[i].second.second += to_string((int) (fraction));
+            if ( fraction > 1 ) {
                 fraction = fraction - 1;
             }
         }
