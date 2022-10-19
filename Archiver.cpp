@@ -26,38 +26,36 @@ void Archiver::Compress(CompressType type) {
 
 
 
-    void Archiver::Extract(const string& archive_file){
-        FILE *archiveFile = fopen(archive_file.c_str(), "rb");   // open archive file
+    void Archiver::Extract(const string& archiveName){
+
+        ifstream archiveFile;
+
+        archiveFile.open(archiveName);
         if(!archiveFile) {
-            cout << "Can't open archive file " << archive_file << endl;
+            cout << "Can't read file " << archiveName << endl;
         }
         else {
-
-            char byte[1];
             file_header header{};
 
-            fseek(archiveFile, 0, SEEK_SET);
+            archiveFile.seekg(0, ios_base::beg);
 
-            while (fread(byte, 1, 1, archiveFile) == 1) {
 
-                //going 1 byte back after checking in "while"
-                fseek(archiveFile, -1, SEEK_CUR);
+            while (!archiveFile.eof() && archiveFile.peek() != EOF) {
 
                 //read header from archive
                 memset(&header, 0, sizeof(struct file_header));
-                fread(header.signature, SIGNATURE_SZ, 1, archiveFile);
-                fread(header.name, NAME_SZ, 1, archiveFile);
-                fread(header.version, VERSION_SZ, 1, archiveFile);
-                fread(header.size, SIZE_SZ, 1, archiveFile);
-                fread(header.algorithm, ALGORITHM_SZ, 1, archiveFile);
-
-                fseek(archiveFile, PADDING_SZ, SEEK_CUR);   //going through padding without reading
-
+                archiveFile.read(header.signature, SIGNATURE_SZ);
+                archiveFile.read(header.name, NAME_SZ);
+                archiveFile.read(header.version, VERSION_SZ);
+                archiveFile.read(header.size, SIZE_SZ);
+                archiveFile.read(header.algorithm, ALGORITHM_SZ);
+                archiveFile.read(header.padding, PADDING_SZ);   //going through padding without reading
 
                 /////
                 cout << "DEBUG | (sign from file): " << string(header.signature) << endl;
                 cout << "DEBUG | (version from file): " << string(header.version) << endl;
                 cout << "DEBUG | (alg code from file): " << string(header.algorithm) << endl;
+                cout << "DEBUG | (size code from file): " << string(header.size) << endl;
                 /////
 
                 if (strcmp(header.signature, SIGN) != 0) {
@@ -73,7 +71,6 @@ void Archiver::Compress(CompressType type) {
 
                 if (strcmp(header.algorithm, "1") == 0) {
                     shannonCompressor.Extract(archiveFile, header);
-                    break;
                 }
                 else if(strcmp(header.algorithm, "0") == 0)
                     packer.Unpack(archiveFile, header);
@@ -84,14 +81,24 @@ void Archiver::Compress(CompressType type) {
 
 
             }
-            fclose(archiveFile);
+            archiveFile.close();
         }
 
     }
 
 void Archiver::intelligentArchive(){
-
-    //todo intelligentArchive
+    for(auto file : files){
+        if( shannonCompressor.Compress(file, archive_file+"_shannonTMP") >= packer.Pack(file, archive_file+"_packTMP") ){
+            packer.Pack(file, archive_file);
+            remove((archive_file+"_shannonTMP").c_str());
+            remove((archive_file+"_packTMP").c_str());
+        }
+        else{
+            shannonCompressor.Compress(file, archive_file);
+            remove((archive_file+"_shannonTMP").c_str());
+            remove((archive_file+"_packTMP").c_str());
+        }
+    }
 
 }
 

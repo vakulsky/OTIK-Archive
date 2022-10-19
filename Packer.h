@@ -15,13 +15,13 @@ public:
     Packer() {};
 
 
-    file_header buildHeader(string file);
+    file_header buildHeader(const string& fileName);
 
     //pack single file to archive. Return: size in archive
     int Pack(const string& file, const string& archiveName);
 
     //get single file from archive
-    void Unpack(FILE* archiveFile, file_header& header);
+    void Unpack(ifstream& archiveFile, file_header& header);
 
     static string getFileName(const string& filename) {
         return filename.substr(filename.find_last_of("\\") + 1, filename.size());
