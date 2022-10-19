@@ -73,7 +73,7 @@ void Shannon::shannonCodes() {
         int codeLength = ceil(-log2((double)(codes[i].second.first)/symbolsAmount));
 
         for (int j = 0; j < i; j++)
-            freqSum += codes[i].second.first;
+            freqSum += codes[j].second.first;
 
         double probabilitySum = (double) freqSum / symbolsAmount;
 
@@ -136,7 +136,7 @@ int Shannon::writeToFile(const string& file, const string& archiveName, file_hea
         return 0;
     } else {
 
-//       archive.seekp(ios_base::end);
+       archive.seekp(0, ios::end);
 
         //writing header
         archive.write(header.signature, sizeof(header.signature));

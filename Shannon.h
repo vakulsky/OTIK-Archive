@@ -47,7 +47,7 @@ private:
     void parseCode(const string& str){
         codes.emplace_back(make_pair(str.substr(0, 1),
                                      make_pair(1,
-                                                  str.substr(2, str.find('\n')-2))));
+                                                  str.substr(1, str.find('\n')-2))));
 
     }
 
