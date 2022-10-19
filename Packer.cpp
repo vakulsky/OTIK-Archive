@@ -24,28 +24,30 @@ int Packer::Pack(const string& fileName, const string& archiveName) {
         return 0;
     }
     else{
-        archiveFile.seekp(0, ios_base::end);
+
+        header  = buildHeader(fileName);
 
         //writing header
-        archiveFile.write(header.signature, sizeof(header.signature));
-        archiveFile.write(header.name, sizeof(header.name));
-        archiveFile.write(header.version, sizeof(header.version));
-        archiveFile.write(header.size, sizeof(header.size));
-        archiveFile.write(header.algorithm, sizeof(header.algorithm));
-        archiveFile.write(header.padding, sizeof(header.padding));
+        archiveFile.write(header.signature, SIGNATURE_SZ);
+        archiveFile.write(header.name, NAME_SZ);
+        archiveFile.write(header.version, VERSION_SZ);
+        archiveFile.write(header.size, SIZE_SZ);
+        archiveFile.write(header.algorithm, ALGORITHM_SZ);
+        archiveFile.write(header.padding, PADDING_SZ);
 
-        auto size = archiveFile.tellp();
+        auto sizeStart = archiveFile.tellp();
 
-        while (!file.eof()) {
+        while (file.peek() != EOF) {
             file.read(buff, sizeof buff);
             archiveFile.write(buff, sizeof buff);
         }
+        archiveFile << "\n";
         cout << "--- " << string(header.name) << " is packed ---" << endl;
 
-        size = archiveFile.tellp() - size;
+        auto sizeEnd = archiveFile.tellp();
         archiveFile.close();
 
-        return size;
+        return (int)(sizeEnd - sizeStart);
         
     }
 }
@@ -62,7 +64,8 @@ file_header Packer::buildHeader(const string& fileName)
     }
     else {
 
-        int fileSize = file.tellg();
+        file.seekg( 0, std::ios::end );
+        int fileSize = (int)(file.tellg());
 
         string name = Packer::getFileName(fileName);  // get file name
 
@@ -88,9 +91,10 @@ void Packer::Unpack(ifstream& archiveFile, file_header& header) {
     }
     else {
 
-        while (!archiveFile.eof()) {
-            archiveFile.read(buff, sizeof buff);
-            outputFile.write(buff, sizeof buff);
+
+        for(int i =0 ; i < atoi(header.size); i++) {
+            archiveFile.read(buff, 1);
+            outputFile.write(buff, 1);
         }
         cout << "--- " << header.name << " is extracted ---" << endl;
 

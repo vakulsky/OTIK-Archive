@@ -107,13 +107,18 @@ file_header Shannon::buildHeader(const string& fileName)
     file_header header{};
     ifstream file;
 
-    file.open(fileName);
+    file.open(fileName, ios_base::in);
     if(!file) {
         cout << "Can't open file " << fileName << endl;
     }
     else {
 
-        int fileSize = file.tellg();
+        file.seekg( 0, std::ios::end );
+        int fileSize = (int)(file.tellg());
+
+        /////
+        cout << "DEBUG | (FILESIZE): " << fileSize << endl;
+        /////
 
         memset(&header, 0, sizeof(struct file_header));
         snprintf(header.signature, SIGNATURE_SZ, "%s", SIGN);
@@ -136,8 +141,6 @@ int Shannon::writeToFile(const string& file, const string& archiveName, file_hea
         cout << "Can't open file " << archiveName << endl;
         return 0;
     } else {
-
-//       archive.seekp(0, ios::end);
 
         //writing header
         archive.write(header.signature, SIGNATURE_SZ);
@@ -164,6 +167,11 @@ int Shannon::writeToFile(const string& file, const string& archiveName, file_hea
             while (getline(fileStream, str)) {
                 vector<string> syms = divideString(str);
                 for (auto &sym: syms) {
+
+                    /////
+                    cout << "DEBUG | (divided): " << sym << endl;
+                    /////
+
                     for (auto code: codes) {
                         if (sym == code.first) {
                             archive << code.second.second;

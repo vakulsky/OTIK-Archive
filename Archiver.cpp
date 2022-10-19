@@ -55,6 +55,7 @@ void Archiver::Compress(CompressType type) {
                 cout << "DEBUG | (sign from file): " << string(header.signature) << endl;
                 cout << "DEBUG | (version from file): " << string(header.version) << endl;
                 cout << "DEBUG | (alg code from file): " << string(header.algorithm) << endl;
+                cout << "DEBUG | (size code from file): " << string(header.size) << endl;
                 /////
 
                 if (strcmp(header.signature, SIGN) != 0) {
@@ -86,8 +87,18 @@ void Archiver::Compress(CompressType type) {
     }
 
 void Archiver::intelligentArchive(){
-
-    //todo intelligentArchive
+    for(auto file : files){
+        if( shannonCompressor.Compress(file, archive_file+"_shannonTMP") >= packer.Pack(file, archive_file+"_packTMP") ){
+            packer.Pack(file, archive_file);
+            remove((archive_file+"_shannonTMP").c_str());
+            remove((archive_file+"_packTMP").c_str());
+        }
+        else{
+            shannonCompressor.Compress(file, archive_file);
+            remove((archive_file+"_shannonTMP").c_str());
+            remove((archive_file+"_packTMP").c_str());
+        }
+    }
 
 }
 
