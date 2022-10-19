@@ -102,25 +102,26 @@ void Shannon::shannonCodes() {
     /////
 }
 
-file_header Shannon::buildHeader(const string& file)
+file_header Shannon::buildHeader(const string& fileName)
 {
-    file_header header;
-    int size = 0;
+    file_header header{};
+    ifstream file;
 
-    for(const auto& sym : codes){
-        //counting coded text
-        size += sym.second.first * sym.second.second.size();
+    file.open(fileName);
+    if(!file) {
+        cout << "Can't open file " << fileName << endl;
     }
+    else {
 
+        int fileSize = file.tellg();
 
-    memset( &header, 0, sizeof( struct file_header ) );
-    snprintf( header.signature, SIGNATURE_SZ, "%s", SIGN  );
-    snprintf( header.name, NAME_SZ, "%s", file.c_str()  );
-    snprintf( header.version, VERSION_SZ, "%s", VERSION );
-    snprintf( header.size, SIZE_SZ, "%d", size );
-    snprintf( header.algorithm, ALGORITHM_SZ, "%s", "1" );
-
-
+        memset(&header, 0, sizeof(struct file_header));
+        snprintf(header.signature, SIGNATURE_SZ, "%s", SIGN);
+        snprintf(header.name, NAME_SZ, "%s", fileName.c_str());
+        snprintf(header.version, VERSION_SZ, "%s", VERSION);
+        snprintf(header.size, SIZE_SZ, "%d", fileSize);
+        snprintf(header.algorithm, ALGORITHM_SZ, "%s", "1");
+    }
     return header;
 }
 
@@ -130,21 +131,21 @@ int Shannon::writeToFile(const string& file, const string& archiveName, file_hea
     ifstream fileStream;
     string str;
 
-    archive.open(archiveName);
+    archive.open(archiveName, ios::app);
     if (!archive) {
         cout << "Can't open file " << archiveName << endl;
         return 0;
     } else {
 
-       archive.seekp(0, ios::end);
+//       archive.seekp(0, ios::end);
 
         //writing header
-        archive.write(header.signature, sizeof(header.signature));
-        archive.write(header.name, sizeof(header.name));
-        archive.write(header.version, sizeof(header.version));
-        archive.write(header.size, sizeof(header.size));
-        archive.write(header.algorithm, sizeof(header.algorithm));
-        archive.write(header.padding, sizeof(header.padding));
+        archive.write(header.signature, SIGNATURE_SZ);
+        archive.write(header.name, NAME_SZ);
+        archive.write(header.version, VERSION_SZ);
+        archive.write(header.size, SIZE_SZ);
+        archive.write(header.algorithm, ALGORITHM_SZ);
+        archive.write(header.padding, PADDING_SZ);
 
         auto size = archive.tellp();
 
@@ -172,6 +173,7 @@ int Shannon::writeToFile(const string& file, const string& archiveName, file_hea
 
 
             };
+            archive << "\n";
             fileStream.close();
 
 
@@ -183,25 +185,27 @@ int Shannon::writeToFile(const string& file, const string& archiveName, file_hea
     }
 }
 
-void Shannon::Extract(FILE *archiveFile, file_header &header) {
+void Shannon::Extract(ifstream & archiveFile, file_header &header) {
 
-    char symbolsInTable[10];
+    string symbolsInTable,
+                    accum,
+                    buff;
     char byte[1];
-    string accum;
+
     ofstream extractedFile;
     extractedFile.open(header.name);
 
-    fgets(symbolsInTable, sizeof symbolsInTable, archiveFile);
+    getline(archiveFile, symbolsInTable);
 
     /////
-    cout << "DEBUG | (syms in table): " << atoi(symbolsInTable) << endl;
+    cout << "DEBUG | (syms in table): " << symbolsInTable << endl;
     /////
 
     codes.clear();
-    for(int i = 0; i < atoi(symbolsInTable); i++){
-        char str[20];
-        fgets(str, sizeof str, archiveFile);
-        parseCode(string(str));
+    for(int i = 0; i < stoi(symbolsInTable); i++){
+        buff.clear();
+       getline(archiveFile, buff);
+        parseCode(buff);
     }
 
     /////
@@ -211,7 +215,12 @@ void Shannon::Extract(FILE *archiveFile, file_header &header) {
     }
     /////
 
-    while (fread(byte, 1, 1, archiveFile) == 1) {
+    /////
+    cout << "DEBUG | (peek): " << archiveFile.peek() << endl;
+    /////
+
+    archiveFile.read(byte, 1);
+    while (byte[0] != '\n') {
         accum += byte[0];
 
         /////
@@ -229,6 +238,8 @@ void Shannon::Extract(FILE *archiveFile, file_header &header) {
                 accum.clear();
             }
         }
+
+        archiveFile.read(byte, 1);
 
     }
     extractedFile.close();
