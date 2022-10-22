@@ -205,10 +205,6 @@ void Shannon::Extract(ifstream & archiveFile, file_header &header) {
 
     getline(archiveFile, symbolsInTable);
 
-    /////
-    cout << "DEBUG | (syms in table): " << symbolsInTable << endl;
-    /////
-
     codes.clear();
     for(int i = 0; i < stoi(symbolsInTable); i++){
         buff.clear();
@@ -223,17 +219,10 @@ void Shannon::Extract(ifstream & archiveFile, file_header &header) {
     }
     /////
 
-    /////
-    cout << "DEBUG | (peek): " << archiveFile.peek() << endl;
-    /////
 
     archiveFile.read(byte, 1);
     while (byte[0] != '\n') {
         accum += byte[0];
-
-        /////
-        cout << "DEBUG | (accum): " << accum << endl;
-        /////
 
         for(const auto& sym : codes){
             if(accum == sym.second.second){  //todo not working

@@ -14,6 +14,7 @@
 #include "fileHeader.h"
 #include <algorithm>
 #include <filesystem>
+#include <sstream>
 
 using namespace std;
 
@@ -46,9 +47,16 @@ private:
     }
 
     void parseCode(const string& str){
-        codes.emplace_back(make_pair(str.substr(0, 1),
+        auto divided = divideString(str);
+
+        stringstream codeAccum;
+        for(int i = 1; i < divided.size(); i++){
+            codeAccum << divided[i];
+        }
+
+        codes.emplace_back(make_pair(divided[0],
                                      make_pair(1,
-                                                  str.substr(1, str.find('\n')-2))));
+                                                  codeAccum.str())));
 
     }
 
