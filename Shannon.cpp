@@ -224,10 +224,6 @@ void Shannon::Extract(ifstream & archiveFile, file_header &header) {
     while (byte[0] != '\n') {
         accum += byte[0];
 
-        /////
-        cout << "DEBUG | (accum): " << accum << endl;
-        /////
-
         for(const auto& sym : codes){
             if(accum == sym.second.second){  //todo not working
 

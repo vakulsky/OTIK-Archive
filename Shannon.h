@@ -49,16 +49,9 @@ private:
     void parseCode(const string& str){
         auto divided = divideString(str);
 
-        /////
-        cout << "DEBUG | DIVIDED STRING" << endl;
-        for(const auto& sym : divided){
-            cout << "| " << sym << endl;
-        }
-        /////
-
         stringstream codeAccum;
-        for(const auto& sym : divided){
-            codeAccum << sym;
+        for(int i = 1; i < divided.size(); i++){
+            codeAccum << divided[i];
         }
 
         codes.emplace_back(make_pair(divided[0],
