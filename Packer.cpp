@@ -96,6 +96,8 @@ void Packer::Unpack(ifstream& archiveFile, file_header& header) {
             archiveFile.read(buff, 1);
             outputFile.write(buff, 1);
         }
+        //reading '\n'
+        archiveFile.read(buff, 1);
         cout << "--- " << header.name << " is extracted ---" << endl;
 
         outputFile.close();

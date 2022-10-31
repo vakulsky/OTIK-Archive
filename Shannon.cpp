@@ -168,10 +168,6 @@ int Shannon::writeToFile(const string& file, const string& archiveName, file_hea
                 vector<string> syms = divideString(str);
                 for (auto &sym: syms) {
 
-                    /////
-                    cout << "DEBUG | (divided): " << sym << endl;
-                    /////
-
                     for (auto code: codes) {
                         if (sym == code.first) {
                             archive << code.second.second;
@@ -225,7 +221,7 @@ void Shannon::Extract(ifstream & archiveFile, file_header &header) {
         accum += byte[0];
 
         for(const auto& sym : codes){
-            if(accum == sym.second.second){  //todo not working
+            if(accum == sym.second.second){
 
                 /////
                 cout << "DEBUG | (matched): " << accum << " --> " << sym.first << endl;
