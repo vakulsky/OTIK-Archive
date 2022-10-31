@@ -6,119 +6,102 @@
 
 using namespace std;
 
-void Archiver::Compress() {
-    char byte[1];  // buffer for reading 1 byte
-
-    file_header header;
-    FILE *f;
-    FILE *main = fopen((this->archive_file).c_str(), "wb");  // opening archive
-
-    // writing each file and header to archive
-    for (vector<string>::iterator itr = this->files.begin(); itr != this->files.end(); ++itr) {
-
-        header = buildHeader(*itr);
-
-        //open file
-        f = fopen((*itr).c_str(), "rb");
-        if (!f) {
-            cout << *itr << " not found!" << endl;
+void Archiver::Compress(CompressType type) {
+    switch (type) {
+        case PACK:
+            for(auto file : files)
+                packer.Pack(file, archive_file);
             break;
-        }
+        case SHANNON:
+            for(auto file : files)
+                shannonCompressor.Compress(file, archive_file);
 
-        //write header
-        fwrite( reinterpret_cast<const unsigned char *>(&header), 1, sizeof( struct file_header ), main );
-
-        //write file data
-        while (!feof(f)) {
-            if (fread(byte, 1, 1, f) == 1) fwrite(byte, 1, 1, main);
-        }
-        cout << *itr << " added to archive '" << this->archive_file << "'." << endl;
-        fclose(f);
+            break;
+        case INTELLIGENT:
+            intelligentArchive();
     }
-    fclose(main);
 }
 
 
-    file_header Archiver::buildHeader(const string file)
-    {
-        file_header header;
-
-        char byte[1];
-
-        //openning file
-        FILE *f = fopen(file.c_str(),"rb");
-        if(!f)
-            cout << "Can't get info of file " << file << endl;
-        else {
-
-            // get file size
-            fseek(f, 0, SEEK_END);
-            int size = ftell(f);
-
-            string name = Archiver::get_file_name(file);  // get file name
-
-            memset( &header, 0, sizeof( struct file_header ) );
-            snprintf( header.signature, SIGNATURE_SZ, "%s", SIGN  );
-            snprintf( header.name, NAME_SZ, "%s", name.c_str()  );
-            snprintf( header.version, VERSION_SZ, "%s", VERSION );
-            snprintf( header.size, SIZE_SZ, "%d", size );
-        }
-
-        return header;
-    }
 
 
-    void Archiver::Extract(const string& archive_file)
-    {
-        FILE *arc = fopen(archive_file.c_str(), "rb");   // open archive file
-        if(!arc) {
-            cout << "Can't open archive file " << archive_file << endl;
+
+    void Archiver::Extract(const string& archiveName){
+
+        ifstream archiveFile;
+
+        archiveFile.open(archiveName);
+        if(!archiveFile) {
+            cout << "Can't read file " << archiveName << endl;
         }
         else {
-
-            char byte[1];
             file_header header{};
 
-            fseek(arc, 0, SEEK_SET);
+            archiveFile.seekg(0, ios_base::beg);
 
-            while (fread(byte, 1, 1, arc) == 1) {
 
-                //going 1 byte back after checking in "while"
-                fseek(arc, -1, SEEK_CUR);
+            while (!archiveFile.eof() && archiveFile.peek() != EOF) {
 
                 //read header from archive
                 memset(&header, 0, sizeof(struct file_header));
-                fread(header.signature, SIGNATURE_SZ, 1, arc);
-                fread(header.name, NAME_SZ, 1, arc);
-                fread(header.version, VERSION_SZ, 1, arc);
-                fread(header.size, SIZE_SZ, 1, arc);
+                archiveFile.read(header.signature, SIGNATURE_SZ);
+                archiveFile.read(header.name, NAME_SZ);
+                archiveFile.read(header.version, VERSION_SZ);
+                archiveFile.read(header.size, SIZE_SZ);
+                archiveFile.read(header.algorithm, ALGORITHM_SZ);
+                archiveFile.read(header.padding, PADDING_SZ);   //going through padding without reading
+
+                /////
+                cout << "DEBUG | (sign from file): " << string(header.signature) << endl;
+                cout << "DEBUG | (version from file): " << string(header.version) << endl;
+                cout << "DEBUG | (alg code from file): " << string(header.algorithm) << endl;
+                cout << "DEBUG | (size code from file): " << string(header.size) << endl;
+                /////
 
                 if (strcmp(header.signature, SIGN) != 0) {
                     cout << "Error: Signature mismatch!" << endl;
                     break;
                 }
 
+
                 if (strcmp(header.version, VERSION) != 0) {
                     cout << "Error: Incompatible version!" << endl;
                     break;
                 }
 
-                fseek(arc, PADDING_SZ, SEEK_CUR);   //going through padding without reading
-
-                //extracting file
-                char full_path[255];
-                strcat(full_path, header.name);
-                int _sz = atoi(header.size);
-                FILE *curr = fopen(header.name, "wb");
-
-                for (int r = 1; r <= _sz; r++) {
-                    if (fread(byte, 1, 1, arc) == 1) fwrite(byte, 1, 1, curr);
+                if (strcmp(header.algorithm, "1") == 0) {
+                    shannonCompressor.Extract(archiveFile, header);
                 }
-                fclose(curr);
-                cout << "--- " << header.name << " is extracted ---" << endl;
+                else if(strcmp(header.algorithm, "0") == 0)
+                    packer.Unpack(archiveFile, header);
+                else {
+                    cout << "Error: Invalid algorithm code!" << endl;
+                    break;
+                }
+
 
             }
-            fclose(arc);
+            archiveFile.close();
         }
 
     }
+
+void Archiver::intelligentArchive(){
+    for(auto file : files){
+        if( shannonCompressor.Compress(file, archive_file+"_shannonTMP") >= packer.Pack(file, archive_file+"_packTMP") ){
+            packer.Pack(file, archive_file);
+            remove((archive_file+"_shannonTMP").c_str());
+            remove((archive_file+"_packTMP").c_str());
+        }
+        else{
+            shannonCompressor.Compress(file, archive_file);
+            remove((archive_file+"_shannonTMP").c_str());
+            remove((archive_file+"_packTMP").c_str());
+        }
+    }
+
+}
+
+
+
+
