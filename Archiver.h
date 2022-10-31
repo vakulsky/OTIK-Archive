@@ -22,14 +22,12 @@ class Archiver {
 private:
     vector<string> files; //headers to be written before every file in archive
     string archive_file;   // archive file path
-    int algorithmCode;
     Packer packer;
     Shannon shannonCompressor;
 public:
     Archiver(vector<string> &vec, string path) {
         if (vec.size() > 0) files.assign(vec.begin(), vec.end());
         archive_file = path;
-        algorithmCode = 0;
     }
 
     void Compress(CompressType);
