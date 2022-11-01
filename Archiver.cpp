@@ -79,6 +79,8 @@ void Archiver::Compress(CompressType type) {
                 }
                 else if(strcmp(header.algorithm, "0") == 0)
                     packer.Unpack(archiveFile, header);
+                else if(strcmp(header.algorithm, "2") == 0)
+                    RLECompressor.Extract(archiveFile, header);
                 else {
                     cout << "Error: Invalid algorithm code!" << endl;
                     break;
