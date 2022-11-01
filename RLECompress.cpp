@@ -11,8 +11,8 @@ int RLECompress::Compress(const string& fileName, const string& archiveName) {
     char buff[1];
     char previous[1];
     char repeatedSym[1];
-    string tempAccum, diffAccum;
-    int count = 1;
+    string diffAccum;
+    int count = 0;
     bool firstIteration = true;
 
 
@@ -20,6 +20,7 @@ int RLECompress::Compress(const string& fileName, const string& archiveName) {
 
 
     file.open(fileName, ios::in);
+    file.seekg(0, ios::beg);
     archive.open(archiveName, ios::app);
     if (!file) {
         cout << "Can't read file " << fileName << endl;
@@ -37,42 +38,63 @@ int RLECompress::Compress(const string& fileName, const string& archiveName) {
         archive.write(header.algorithm, ALGORITHM_SZ);
         archive.write(header.padding, PADDING_SZ);
 
+
         auto size = archive.tellp();
 
 
         while (file.peek() != EOF) {
             file.read(buff, 1);
-            tempAccum.append(1, buff[0]);
 
             if (previous[0] == buff[0] || firstIteration) {
                 count++;
                 repeatedSym[0] = buff[0];
+
+                //remove repeated sym
+                if(!diffAccum.empty()) {
+                    if (diffAccum.find(repeatedSym[0]) == diffAccum.length() - 1)
+                        diffAccum.pop_back();
+                }
+
+                if (count >= a) {
+                    //write diff if any
+                    if (!diffAccum.empty()) {
+                        writeToArchive(archive, diffAccum);
+                        diffAccum.clear();
+                    }
+                }
+
             } else {
-                if (diffAccum.size() + count > Lmax) {
+
+                if (count >= a) {
+                    writeToArchive(archive, repeatedSym[0], count);
+                    count = 1;
+                }
+
+                if ((diffAccum.size() + count) > Lmax) {
                     //if we cant add more symbols to diffAccum
                     writeToArchive(archive, diffAccum);
                     diffAccum.clear();
                 }
+
                 if (count > 1) {
                     for (int j = 0; j < count; j++)
                         diffAccum.append(1, repeatedSym[0]);
                     count = 1;
                 }
+
                 diffAccum.append(1, buff[0]);
 
             }
-
-            if (count >= a) {
-                //write diff if any
-                if (!diffAccum.empty()) {
-                    writeToArchive(archive, diffAccum);
-                    diffAccum.clear();
-                }
-                writeToArchive(archive, repeatedSym[0], count);
-                count = 1;
-            }
-
+            previous[0] = buff[0];
             firstIteration = false;
+        }
+
+        //write remaining symbols
+        if(count > a){
+            writeToArchive(archive, repeatedSym[0], count);
+        }
+        else{
+            writeToArchive(archive, diffAccum);
         }
 
         size = archive.tellp() - size;
@@ -112,7 +134,7 @@ void RLECompress::Extract(ifstream& archiveFile, file_header& header){
 
                 //read count
                 archiveFile.read(buff, 1);
-                count = atoi(&buff[0]);
+                count = atoi(&buff[0]) + a;
 
                 //read byte
                 archiveFile.read(buff, 1);
@@ -125,7 +147,7 @@ void RLECompress::Extract(ifstream& archiveFile, file_header& header){
 
                 //read length
                 archiveFile.read(buff, 1);
-                count = atoi(&buff[0]);
+                count = atoi(&buff[0]) + b;
 
                 //read sequence
                 archiveFile.read(sequenceAccum, count);
@@ -179,15 +201,21 @@ file_header RLECompress::buildHeader(const std::string &fileName) {
 
 void RLECompress::writeToArchive( ofstream& archive, const string& sequenceString){
 
+    /////
+    cout << "DEBUG| SEQ: " << sequenceString << endl;
+    /////
+
     archive << 0 << sequenceString.size() - 1;
     archive.write(sequenceString.c_str(), sequenceString.size());
 }
 
 void RLECompress::writeToArchive( ofstream& archive, const char repeatedChar, int count){
-    archive << 1 << count-a;
 
-    for(int i = 0; i < count; i++){
-        archive.write(&repeatedChar, sizeof repeatedChar);
-    }
+    /////
+    cout << "DEBUG| REP: " << repeatedChar << " , count = " << count << endl;
+    /////
+
+    archive << 1 << count-a;
+    archive.write(&repeatedChar, sizeof repeatedChar);
 
 }
