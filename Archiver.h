@@ -14,7 +14,8 @@ using namespace std;
 enum CompressType{
     PACK,
     SHANNON,
-    INTELLIGENT
+    INTELLIGENT,
+    RLE
 };
 
 class Archiver {
@@ -24,6 +25,7 @@ private:
     string archive_file;   // archive file path
     Packer packer;
     Shannon shannonCompressor;
+    RLECompress RLECompressor;
 public:
     Archiver(vector<string> &vec, string path) {
         if (vec.size() > 0) files.assign(vec.begin(), vec.end());
