@@ -5,7 +5,7 @@
 #ifndef OTIK_ARCHIVE_ARCHIVER_H
 #define OTIK_ARCHIVE_ARCHIVER_H
 
-#include "Packer.h"
+#include "RLECompress.h"
 
 
 
