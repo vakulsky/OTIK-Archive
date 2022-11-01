@@ -12,7 +12,7 @@ int RLECompress::Compress(const string& fileName, const string& archiveName) {
     char previous[1];
     char repeatedSym[1];
     string diffAccum;
-    int count = 0;
+    int count = 0, minRep = 3;
     bool firstIteration = true;
 
 
@@ -45,7 +45,8 @@ int RLECompress::Compress(const string& fileName, const string& archiveName) {
         while (file.peek() != EOF) {
             file.read(buff, 1);
 
-            if (previous[0] == buff[0] || firstIteration) {
+
+            if (previous[0] == buff[0]) {
                 count++;
                 repeatedSym[0] = buff[0];
 
@@ -55,7 +56,7 @@ int RLECompress::Compress(const string& fileName, const string& archiveName) {
                         diffAccum.pop_back();
                 }
 
-                if (count >= a) {
+                if (count >= minRep) {
                     //write diff if any
                     if (!diffAccum.empty()) {
                         writeToArchive(archive, diffAccum);
@@ -65,7 +66,7 @@ int RLECompress::Compress(const string& fileName, const string& archiveName) {
 
             } else {
 
-                if (count >= a) {
+                if (count >= minRep) {
                     writeToArchive(archive, repeatedSym[0], count);
                     count = 1;
                 }
@@ -90,14 +91,19 @@ int RLECompress::Compress(const string& fileName, const string& archiveName) {
         }
 
         //write remaining symbols
-        if(count > a){
+        if(count > minRep){
             writeToArchive(archive, repeatedSym[0], count);
         }
         else{
-            writeToArchive(archive, diffAccum);
+            if(!diffAccum.empty())
+                writeToArchive(archive, diffAccum);
         }
 
+        //finally write '\n'
+        archive << "\n";
+
         size = archive.tellp() - size;
+
 
         file.close();
         archive.close();
@@ -128,16 +134,34 @@ void RLECompress::Extract(ifstream& archiveFile, file_header& header){
     } else {
 
         archiveFile.read(buff, 1);
+
+        /////
+        cout << "DEBUG| EXTR (buff before while): " << buff[0] << endl;
+        /////
+
         while (buff[0] != '\n') {
             if(buff[0] == '1'){
                 //compressed
+
+                /////
+                cout << "DEBUG| EXTR (code): " << buff[0] << endl;
+                /////
 
                 //read count
                 archiveFile.read(buff, 1);
                 count = atoi(&buff[0]) + a;
 
+                /////
+                cout << "DEBUG| EXTR (size): " << count << endl;
+                /////
+
                 //read byte
                 archiveFile.read(buff, 1);
+
+                /////
+                cout << "DEBUG| EXTR (sym): " << buff[0] << endl;
+                /////
+
                 for(int i = 0; i < count; i++){
                     file.write(&buff[0], sizeof buff[0]);
                 }
@@ -145,15 +169,29 @@ void RLECompress::Extract(ifstream& archiveFile, file_header& header){
             else{
                 //raw
 
+                /////
+                cout << "DEBUG| EXTR (code): " << buff[0] << endl;
+                /////
+
                 //read length
                 archiveFile.read(buff, 1);
                 count = atoi(&buff[0]) + b;
 
+                /////
+                cout << "DEBUG| EXTR (size): " << count << endl;
+                /////
+
+
+
                 //read sequence
+                memset(sequenceAccum, 0, sizeof sequenceAccum);
                 archiveFile.read(sequenceAccum, count);
-                for(int i = 0; i < count; i++){
-                    file.write(sequenceAccum, count);
-                }
+
+                /////
+                cout << "DEBUG| EXTR (seq): " << sequenceAccum << endl;
+                /////
+
+                file.write(sequenceAccum, count);
 
             }
 
@@ -205,7 +243,7 @@ void RLECompress::writeToArchive( ofstream& archive, const string& sequenceStrin
     cout << "DEBUG| SEQ: " << sequenceString << endl;
     /////
 
-    archive << 0 << sequenceString.size() - 1;
+    archive << 0 << sequenceString.size() - b;
     archive.write(sequenceString.c_str(), sequenceString.size());
 }
 
