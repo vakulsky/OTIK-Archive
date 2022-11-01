@@ -27,18 +27,19 @@ int main(int argv, char* argc[])
             if(strcmp(argc[i],"-files")==0) {flag_fs=true; flag_path=false; continue; }
 
             if(flag_path) {path.assign(argc[i]); }
-            if(flag_fs) files.push_back(string(argc[i]));
+            if(flag_fs) files.emplace_back(argc[i]);
         }
 
         Archiver zip(files, path);
         if(strcmp(type,"normal")==0) zip.Compress(PACK);
         if(strcmp(type,"shannon")==0) zip.Compress(SHANNON);
         if(strcmp(type,"intelligent")==0) zip.Compress(INTELLIGENT);
+        if(strcmp(type,"rle")==0) zip.Compress(RLE);
         if(strcmp(type,"unpack")==0) zip.Extract(files[0]);
     }
     else {
         cout << "USAGE:" << endl;
-        cout << "-pack <normal | shannon | intelligent> -files <files to compress> "
+        cout << "-pack <normal | shannon | rle | intelligent> -files <files to compress> "
                 "-path <folder_to_save_archive_file>" << endl;
         cout << "OR" << endl;
         cout << "-unpack -files <archive_file> -path <path for extracted files>" << endl;

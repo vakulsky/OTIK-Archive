@@ -17,6 +17,11 @@ void Archiver::Compress(CompressType type) {
                 shannonCompressor.Compress(file, archive_file);
 
             break;
+        case RLE:
+            for(auto file : files)
+                RLECompressor.Compress(file, archive_file);
+
+            break;
         case INTELLIGENT:
             intelligentArchive();
     }
@@ -74,6 +79,8 @@ void Archiver::Compress(CompressType type) {
                 }
                 else if(strcmp(header.algorithm, "0") == 0)
                     packer.Unpack(archiveFile, header);
+                else if(strcmp(header.algorithm, "2") == 0)
+                    RLECompressor.Extract(archiveFile, header);
                 else {
                     cout << "Error: Invalid algorithm code!" << endl;
                     break;
@@ -88,15 +95,30 @@ void Archiver::Compress(CompressType type) {
 
 void Archiver::intelligentArchive(){
     for(auto file : files){
-        if( shannonCompressor.Compress(file, archive_file+"_shannonTMP") >= packer.Pack(file, archive_file+"_packTMP") ){
+
+        int packSize = packer.Pack(file, archive_file+"_packTMP"),
+            shannonSize = shannonCompressor.Compress(file, archive_file+"_shannonTMP"),
+            RLESize = RLECompressor.Compress(file, archive_file+"_rleTMP");
+
+        if( packSize <= shannonSize &&  packSize <= RLESize){
             packer.Pack(file, archive_file);
             remove((archive_file+"_shannonTMP").c_str());
             remove((archive_file+"_packTMP").c_str());
+            remove((archive_file+"_rleTMP").c_str());
         }
-        else{
+
+        if( shannonSize <= RLESize &&  shannonSize <= packSize){
             shannonCompressor.Compress(file, archive_file);
             remove((archive_file+"_shannonTMP").c_str());
             remove((archive_file+"_packTMP").c_str());
+            remove((archive_file+"_rleTMP").c_str());
+        }
+
+        if( RLESize <= shannonSize &&  RLESize <= packSize){
+            RLECompressor.Compress(file, archive_file);
+            remove((archive_file+"_shannonTMP").c_str());
+            remove((archive_file+"_packTMP").c_str());
+            remove((archive_file+"_rleTMP").c_str());
         }
     }
 

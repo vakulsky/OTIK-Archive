@@ -3,6 +3,6 @@ project(OTIK_Archive)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(Archiver  main.cpp Archiver.cpp Packer.cpp Shannon.cpp)
+add_executable(Archiver  main.cpp Archiver.cpp Packer.cpp Shannon.cpp RLECompress.cpp)
 
 target_link_libraries(Archiver "-static")
