@@ -10,11 +10,23 @@
 
 class RLECompress {
 private:
-    //some fields
-    //some private methods if needed
+
+    int     Lmax,
+            a,  //Lmax - 3
+            b;  //Lmax - 1
+
+    file_header buildHeader(const string& fileName);
+    void writeToArchive( ofstream& archive, const string& sequenceString);
+    void writeToArchive( ofstream& archive, const char repeatedChar, int count);
 
 public:
-    int Compress(const string& file, const string& archiveName);
+    RLECompress(){
+        Lmax = 255;
+        a = 3;
+        b = 1;
+    }
+
+    int Compress(const string& fileName, const string& archiveName);
     void Extract(ifstream& archiveFile, file_header& header);
 
 
