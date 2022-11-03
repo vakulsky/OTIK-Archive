@@ -15,7 +15,8 @@ enum CompressType{
     PACK,
     SHANNON,
     INTELLIGENT,
-    RLE
+    RLE,
+    TESTALL
 };
 
 class Archiver {
@@ -35,6 +36,7 @@ public:
     void Compress(CompressType);
     void Extract(const string& archive_file);
     void intelligentArchive();
+    void compressAllMethods();
 
 
 

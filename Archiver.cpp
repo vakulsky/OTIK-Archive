@@ -10,20 +10,22 @@ void Archiver::Compress(CompressType type) {
     switch (type) {
         case PACK:
             for(auto file : files)
-                packer.Pack(file, archive_file);
+                packer.Pack(file, archive_file, true);
             break;
         case SHANNON:
             for(auto file : files)
-                shannonCompressor.Compress(file, archive_file);
+                shannonCompressor.Compress(file, archive_file, true);
 
             break;
         case RLE:
             for(auto file : files)
-                RLECompressor.Compress(file, archive_file);
-
+                RLECompressor.Compress(file, archive_file, true);
             break;
         case INTELLIGENT:
             intelligentArchive();
+
+        case TESTALL:
+            compressAllMethods();
     }
 }
 
@@ -96,32 +98,43 @@ void Archiver::Compress(CompressType type) {
 void Archiver::intelligentArchive(){
     for(auto file : files){
 
-        int packSize = packer.Pack(file, archive_file+"_packTMP"),
-            shannonSize = shannonCompressor.Compress(file, archive_file+"_shannonTMP"),
-            RLESize = RLECompressor.Compress(file, archive_file+"_rleTMP");
+        int packSize = packer.Pack(file, archive_file+"_packTMP", false),
+            shannonSize = shannonCompressor.Compress(file, archive_file+"_shannonTMP", false),
+            RLESize = RLECompressor.Compress(file, archive_file+"_rleTMP", false);
 
         if( packSize <= shannonSize &&  packSize <= RLESize){
-            packer.Pack(file, archive_file);
+            packer.Pack(file, archive_file, true);
             remove((archive_file+"_shannonTMP").c_str());
             remove((archive_file+"_packTMP").c_str());
             remove((archive_file+"_rleTMP").c_str());
         }
 
         if( shannonSize <= RLESize &&  shannonSize <= packSize){
-            shannonCompressor.Compress(file, archive_file);
+            shannonCompressor.Compress(file, archive_file, true);
             remove((archive_file+"_shannonTMP").c_str());
             remove((archive_file+"_packTMP").c_str());
             remove((archive_file+"_rleTMP").c_str());
         }
 
         if( RLESize <= shannonSize &&  RLESize <= packSize){
-            RLECompressor.Compress(file, archive_file);
+            RLECompressor.Compress(file, archive_file, true);
             remove((archive_file+"_shannonTMP").c_str());
             remove((archive_file+"_packTMP").c_str());
             remove((archive_file+"_rleTMP").c_str());
         }
     }
 
+}
+
+
+void Archiver::compressAllMethods(){
+    cout << "***NOTE: FOR TESTS ONLY. YOU WON'T BE ABLE TO EXTRACT FILES!!***" << endl;
+    for(const auto& file : files){
+        packer.Pack(file, archive_file, true);
+        shannonCompressor.Compress(file, archive_file, false);
+        RLECompressor.Compress(file, archive_file, false);
+
+    }
 }
 
 

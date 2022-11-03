@@ -26,7 +26,7 @@ private:
 
     void analyzeUTF8(const string& currentSymbol);
     void shannonCodes();
-    int writeToFile(const string& file, const string& archiveName, file_header& header);
+    int writeToFile(const string& file, const string& archiveName, file_header& header, bool writeHeader);
     file_header buildHeader(const string& file);
 
 
@@ -61,7 +61,7 @@ private:
     }
 
 public:
-    int Compress(const string& file, const string& archiveName);
+    int Compress(const string& file, const string& archiveName, bool writeHeader);
     void Extract(ifstream& archiveFile, file_header& header);
 
 

@@ -26,7 +26,7 @@ public:
         b = 3;
     }
 
-    int Compress(const string& fileName, const string& archiveName);
+    int Compress(const string& fileName, const string& archiveName, bool writeHeader);
     void Extract(ifstream& archiveFile, file_header& header);
 
 
