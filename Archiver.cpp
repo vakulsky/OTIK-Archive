@@ -21,6 +21,11 @@ void Archiver::Compress(CompressType type) {
             for(auto file : files)
                 RLECompressor.Compress(file, archive_file, true);
             break;
+
+        case LZ77:
+            for(auto file : files)
+                LZ77Compressor.Compress(file, archive_file, true);
+            break;
         case INTELLIGENT:
             intelligentArchive();
 
@@ -83,6 +88,8 @@ void Archiver::Compress(CompressType type) {
                     packer.Unpack(archiveFile, header);
                 else if(strcmp(header.algorithm, "2") == 0)
                     RLECompressor.Extract(archiveFile, header);
+                else if(strcmp(header.algorithm, "3") == 0)
+                    LZ77Compressor.Extract(archiveFile, header);
                 else {
                     cout << "Error: Invalid algorithm code!" << endl;
                     break;
@@ -100,27 +107,39 @@ void Archiver::intelligentArchive(){
 
         int packSize = packer.Pack(file, archive_file+"_packTMP", false),
             shannonSize = shannonCompressor.Compress(file, archive_file+"_shannonTMP", false),
-            RLESize = RLECompressor.Compress(file, archive_file+"_rleTMP", false);
+            RLESize = RLECompressor.Compress(file, archive_file+"_rleTMP", false),
+            LZ77Size = LZ77Compressor.Compress(file, archive_file+"_lz77TMP", false);
 
-        if( packSize <= shannonSize &&  packSize <= RLESize){
+        if( packSize <= shannonSize &&  packSize <= RLESize  &&  packSize <= LZ77Size){
             packer.Pack(file, archive_file, true);
             remove((archive_file+"_shannonTMP").c_str());
             remove((archive_file+"_packTMP").c_str());
             remove((archive_file+"_rleTMP").c_str());
+            remove((archive_file+"_lz77TMP").c_str());
         }
 
-        if( shannonSize <= RLESize &&  shannonSize <= packSize){
+        if( shannonSize <= RLESize &&  shannonSize <= packSize &&  shannonSize <= LZ77Size){
             shannonCompressor.Compress(file, archive_file, true);
             remove((archive_file+"_shannonTMP").c_str());
             remove((archive_file+"_packTMP").c_str());
             remove((archive_file+"_rleTMP").c_str());
+            remove((archive_file+"_lz77TMP").c_str());
         }
 
-        if( RLESize <= shannonSize &&  RLESize <= packSize){
+        if( RLESize <= shannonSize &&  RLESize <= packSize &&  RLESize <= LZ77Size){
             RLECompressor.Compress(file, archive_file, true);
             remove((archive_file+"_shannonTMP").c_str());
             remove((archive_file+"_packTMP").c_str());
             remove((archive_file+"_rleTMP").c_str());
+            remove((archive_file+"_lz77TMP").c_str());
+        }
+
+        if( LZ77Size <= shannonSize &&  LZ77Size <= packSize &&  LZ77Size <= RLESize){
+            LZ77Compressor.Compress(file, archive_file, true);
+            remove((archive_file+"_shannonTMP").c_str());
+            remove((archive_file+"_packTMP").c_str());
+            remove((archive_file+"_rleTMP").c_str());
+            remove((archive_file+"_lz77TMP").c_str());
         }
     }
 
@@ -133,6 +152,7 @@ void Archiver::compressAllMethods(){
         packer.Pack(file, archive_file, true);
         shannonCompressor.Compress(file, archive_file, false);
         RLECompressor.Compress(file, archive_file, false);
+        LZ77Compressor.Compress(file, archive_file, false);
 
     }
 }
