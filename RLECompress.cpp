@@ -4,7 +4,7 @@
 
 #include "RLECompress.h"
 
-int RLECompress::Compress(const string& fileName, const string& archiveName) {
+int RLECompress::Compress(const string& fileName, const string& archiveName, bool writeHeader) {
 
     ifstream file;
     ofstream archive;
@@ -14,9 +14,6 @@ int RLECompress::Compress(const string& fileName, const string& archiveName) {
     string diffAccum;
     int count = 0, minRep = 3;
     bool firstIteration = true;
-
-
-    file_header header = buildHeader(fileName);
 
 
     file.open(fileName, ios::in);
@@ -30,14 +27,17 @@ int RLECompress::Compress(const string& fileName, const string& archiveName) {
         return 0;
     } else {
 
-        //writing header
-        archive.write(header.signature, SIGNATURE_SZ);
-        archive.write(header.name, NAME_SZ);
-        archive.write(header.version, VERSION_SZ);
-        archive.write(header.size, SIZE_SZ);
-        archive.write(header.algorithm, ALGORITHM_SZ);
-        archive.write(header.padding, PADDING_SZ);
+        if(writeHeader) {
+            file_header header = buildHeader(fileName);
 
+            //writing header
+            archive.write(header.signature, SIGNATURE_SZ);
+            archive.write(header.name, NAME_SZ);
+            archive.write(header.version, VERSION_SZ);
+            archive.write(header.size, SIZE_SZ);
+            archive.write(header.algorithm, ALGORITHM_SZ);
+            archive.write(header.padding, PADDING_SZ);
+        }
 
         auto size = archive.tellp();
 

@@ -4,7 +4,7 @@
 
 #include "Shannon.h"
 
-int Shannon::Compress(const string& file, const string& archiveName){
+int Shannon::Compress(const string& file, const string& archiveName, bool writeHeader){
 
     ifstream f;
     string str;
@@ -37,7 +37,7 @@ int Shannon::Compress(const string& file, const string& archiveName){
         /////
 
         file_header header = buildHeader(file);
-        compressedSize = writeToFile(file, archiveName, header);
+        compressedSize = writeToFile(file, archiveName, header, writeHeader);
 
         return compressedSize;
 
@@ -130,7 +130,7 @@ file_header Shannon::buildHeader(const string& fileName)
     return header;
 }
 
-int Shannon::writeToFile(const string& file, const string& archiveName, file_header& header) {
+int Shannon::writeToFile(const string& file, const string& archiveName, file_header& header, bool writeHeader) {
 
     ofstream archive;
     ifstream fileStream;
@@ -142,13 +142,15 @@ int Shannon::writeToFile(const string& file, const string& archiveName, file_hea
         return 0;
     } else {
 
-        //writing header
-        archive.write(header.signature, SIGNATURE_SZ);
-        archive.write(header.name, NAME_SZ);
-        archive.write(header.version, VERSION_SZ);
-        archive.write(header.size, SIZE_SZ);
-        archive.write(header.algorithm, ALGORITHM_SZ);
-        archive.write(header.padding, PADDING_SZ);
+        if(writeHeader) {
+            //writing header
+            archive.write(header.signature, SIGNATURE_SZ);
+            archive.write(header.name, NAME_SZ);
+            archive.write(header.version, VERSION_SZ);
+            archive.write(header.size, SIZE_SZ);
+            archive.write(header.algorithm, ALGORITHM_SZ);
+            archive.write(header.padding, PADDING_SZ);
+        }
 
         auto size = archive.tellp();
 

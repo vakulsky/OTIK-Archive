@@ -6,7 +6,7 @@
 
 using namespace std;
 
-int Packer::Pack(const string& fileName, const string& archiveName) {
+int Packer::Pack(const string& fileName, const string& archiveName, bool writeHeader) {
 
     ofstream archiveFile;
     ifstream file;
@@ -25,15 +25,17 @@ int Packer::Pack(const string& fileName, const string& archiveName) {
     }
     else{
 
-        header  = buildHeader(fileName);
+        if(writeHeader) {
+            header = buildHeader(fileName);
 
-        //writing header
-        archiveFile.write(header.signature, SIGNATURE_SZ);
-        archiveFile.write(header.name, NAME_SZ);
-        archiveFile.write(header.version, VERSION_SZ);
-        archiveFile.write(header.size, SIZE_SZ);
-        archiveFile.write(header.algorithm, ALGORITHM_SZ);
-        archiveFile.write(header.padding, PADDING_SZ);
+            //writing header
+            archiveFile.write(header.signature, SIGNATURE_SZ);
+            archiveFile.write(header.name, NAME_SZ);
+            archiveFile.write(header.version, VERSION_SZ);
+            archiveFile.write(header.size, SIZE_SZ);
+            archiveFile.write(header.algorithm, ALGORITHM_SZ);
+            archiveFile.write(header.padding, PADDING_SZ);
+        }
 
         auto sizeStart = archiveFile.tellp();
 
