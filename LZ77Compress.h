@@ -12,8 +12,8 @@ class LZ77Compress {
 private:
 
     /** BUFFERS **/
-    std::string fileText; // contains the text from an archive
-    std::string TEXT_ENCODED; // contains the text encoded
+    std::string TEXT_IN; // contains the text from an archive
+    std::string TEXT_OUT; // contains the text encoded
     std::string strToAnalyze; // contains the string to analyze
     std::string window; // contains the string where will search matches
     /** END BUFFERS **/

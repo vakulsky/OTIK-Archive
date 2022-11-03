@@ -67,16 +67,16 @@ int LZ77Compress::Compress(const string& fileName, const string& archiveName, bo
         auto size = archive.tellp();
 
         std::string buffer;
-        fileText = "";
+        TEXT_IN = "";
 
         while( !file.eof() )
         {
             std::getline( file, buffer );
-            fileText += buffer;
+            TEXT_IN += buffer;
             buffer.clear();
         }
 
-        TEXT_ENCODED = "";
+        TEXT_OUT = "";
         strToAnalyze = "";
         window = "";
         SL.first = 0;
@@ -89,7 +89,7 @@ int LZ77Compress::Compress(const string& fileName, const string& archiveName, bo
 
         size = archive.tellp() - size;
 
-        archive << TEXT_ENCODED << "\n";
+        archive << TEXT_OUT << "\n";
 
         file.close();
         archive.close();
@@ -104,7 +104,8 @@ int LZ77Compress::Compress(const string& fileName, const string& archiveName, bo
 void LZ77Compress::Extract(ifstream& archiveFile, file_header& header){
 
     ofstream file;
-    char buff[1];
+    int shift, size;
+    string str;
     string fileName = header.name;
 
 
@@ -117,11 +118,70 @@ void LZ77Compress::Extract(ifstream& archiveFile, file_header& header){
 
     } else {
 
+        TEXT_IN = "";
+        TEXT_OUT = "";
 
-        //todo decode
+        std::getline( archiveFile, TEXT_IN);
+        std::getline( archiveFile, TEXT_IN );
 
-            archiveFile.read(buff, 1);  //todo ?
 
+
+        position = 0;
+        while(position < TEXT_IN.size()){
+            shift = atoi(TEXT_IN.substr(position, 1).c_str());
+            position++;
+            size = atoi(TEXT_IN.substr(position, 1).c_str());
+            position++;
+
+            if(shift == 0){
+
+                /////
+                cout << "DEBUG: shift = 0 "  <<  endl;
+                /////
+
+
+                if(position < TEXT_IN.size())
+                    str = TEXT_IN.substr(position, 1);
+                position++;
+
+                /////
+                cout << "DEBUG: written: " << str << endl <<  endl;
+                /////
+
+
+                TEXT_OUT.append(str);
+            }
+            else{
+
+                /////
+                cout << "DEBUG: shift > 0 "  <<  endl;
+                /////
+
+
+
+                for(int i = 0; i < size; i++){
+                    str = TEXT_OUT[TEXT_OUT.size()-shift];
+                    TEXT_OUT.append(str);
+                }
+                /////
+                cout << "DEBUG: writing " << str << " " <<  size << " times" <<  endl;
+                /////
+
+                if(position < TEXT_IN.size()) {
+                    str = TEXT_IN.substr(position, 1);
+                    TEXT_OUT.append(str);
+
+                    /////
+                    cout << "DEBUG: then writing " << str  << endl <<  endl;
+                    /////
+
+                }
+                position++;
+
+            }
+        }
+
+        file << TEXT_OUT << endl;
 
     }
 
@@ -134,9 +194,9 @@ void LZ77Compress::encodeLZ77() {
 
     stringstream builder;
 
-    while(position < fileText.size()){
+    while(position < TEXT_IN.size()){
 
-        strToAnalyze = fileText.substr(position, 1);
+        strToAnalyze = TEXT_IN.substr(position, 1);
         updateWindow();
 
         /////
@@ -158,7 +218,7 @@ void LZ77Compress::encodeLZ77() {
             cout << "DEBUG: written:  " << "00" << strToAnalyze <<  endl << endl;
             /////
 
-            TEXT_ENCODED.append(builder.str());
+            TEXT_OUT.append(builder.str());
             builder.str("");
             strToAnalyze.clear();
             position++;
@@ -167,9 +227,10 @@ void LZ77Compress::encodeLZ77() {
         else
         {
             // We founded any byte from buffer in inspection
-            while(window.find(strToAnalyze ) != std::string::npos && SL.second < maxChunkLength && position < fileText.size())
+            SL.first = position - windowStartPos - window.find(strToAnalyze );
+            while(window.find(strToAnalyze ) != std::string::npos && SL.second < maxChunkLength && position < TEXT_IN.size())
             {
-                SL.first = position - windowStartPos - window.find(strToAnalyze );
+
                 SL.second++;
                 position++;
 
@@ -178,13 +239,13 @@ void LZ77Compress::encodeLZ77() {
                 /////
 
                 /////
-                cout << "DEBUG: pos:  " << position << " size: " << fileText.size() <<  endl << endl;
+                cout << "DEBUG: pos:  " << position << " size: " << TEXT_IN.size() << endl << endl;
                 /////
 
                 updateWindow();
-                if(position < fileText.size()) {
-                    if (strToAnalyze.find(fileText.substr(position, 1)) != string::npos) {
-                        strToAnalyze.append(fileText.substr(position, 1));
+                if(position < TEXT_IN.size()) {
+                    if (strToAnalyze.find(TEXT_IN.substr(position, 1)) != string::npos) {
+                        strToAnalyze.append(TEXT_IN.substr(position, 1));
                     }
                     else
                         break;
@@ -192,12 +253,12 @@ void LZ77Compress::encodeLZ77() {
 
             }
 
-            if(position < fileText.size()){
+            if(position < TEXT_IN.size()){
 
-                builder << SL.first << SL.second << fileText.substr(position, 1);
+                builder << SL.first << SL.second << TEXT_IN.substr(position, 1);
 
                 /////
-                cout << "DEBUG: written:  " << SL.first << SL.second << fileText.substr(position, 1) <<  endl << endl;
+                cout << "DEBUG: written:  " << SL.first << SL.second << TEXT_IN.substr(position, 1) << endl << endl;
                 /////
 
                 position++;
@@ -214,7 +275,7 @@ void LZ77Compress::encodeLZ77() {
             }
 
 
-            TEXT_ENCODED.append(builder.str());
+            TEXT_OUT.append(builder.str());
             builder.str("");
 
             strToAnalyze.clear();
@@ -223,7 +284,7 @@ void LZ77Compress::encodeLZ77() {
         }
 
         /////
-        cout << "DEBUG: pos:  " << position << " size: " << fileText.size() <<  endl << endl;
+        cout << "DEBUG: pos:  " << position << " size: " << TEXT_IN.size() << endl << endl;
         /////
     }
 
@@ -243,7 +304,7 @@ void LZ77Compress::updateWindow() {
             n = windowSize;
         }
 
-        window = fileText.substr(pos, n);
+        window = TEXT_IN.substr(pos, n);
     }
 
     windowStartPos = pos;
