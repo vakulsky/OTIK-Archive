@@ -5,7 +5,7 @@
 #ifndef OTIK_ARCHIVE_ARCHIVER_H
 #define OTIK_ARCHIVE_ARCHIVER_H
 
-#include "RLECompress.h"
+#include "LZ77Compress.h"
 
 
 
@@ -16,6 +16,7 @@ enum CompressType{
     SHANNON,
     INTELLIGENT,
     RLE,
+    LZ77,
     TESTALL
 };
 
@@ -27,6 +28,7 @@ private:
     Packer packer;
     Shannon shannonCompressor;
     RLECompress RLECompressor;
+    LZ77Compress LZ77Compressor;
 public:
     Archiver(vector<string> &vec, string path) {
         if (vec.size() > 0) files.assign(vec.begin(), vec.end());
