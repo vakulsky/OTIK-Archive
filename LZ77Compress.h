@@ -11,8 +11,24 @@ class LZ77Compress {
 
 private:
 
+    /** BUFFERS **/
+    std::string fileText; // contains the text from an archive
+    std::string TEXT_ENCODED; // contains the text encoded
+    std::string strToAnalyze; // contains the string to analyze
+    std::string window; // contains the string where will search matches
+    /** END BUFFERS **/
+
+    unsigned int maxChunkLength = 9;
+    unsigned int windowSize = 9;
+    unsigned int position;
+    unsigned int windowStartPos;
+
+    std::pair< unsigned int, unsigned int> SL = {0, 0};
 
     file_header buildHeader(const string& fileName);
+    void encodeLZ77();
+
+    void updateWindow();
 
 public:
 

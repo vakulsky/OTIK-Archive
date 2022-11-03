@@ -35,12 +35,14 @@ int main(int argv, char* argc[])
         if(strcmp(type,"shannon")==0) zip.Compress(SHANNON);
         if(strcmp(type,"intelligent")==0) zip.Compress(INTELLIGENT);
         if(strcmp(type,"rle")==0) zip.Compress(RLE);
+        if(strcmp(type,"lz77")==0) zip.Compress(LZ77);
+
         if(strcmp(type,"testall")==0) zip.Compress(TESTALL);
         if(strcmp(type,"unpack")==0) zip.Extract(files[0]);
     }
     else {
         cout << "USAGE:" << endl;
-        cout << "-pack <normal | shannon | rle | intelligent | testall> -files <files to compress> "
+        cout << "-pack <normal | shannon | rle | lz77 | intelligent | testall> -files <files to compress> "
                 "-path <folder_to_save_archive_file>" << endl;
         cout << "OR" << endl;
         cout << "-unpack -files <archive_file> -path <path for extracted files>" << endl;
