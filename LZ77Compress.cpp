@@ -104,7 +104,7 @@ int LZ77Compress::Compress(const string& fileName, const string& archiveName, bo
 void LZ77Compress::Extract(ifstream& archiveFile, file_header& header){
 
     ofstream file;
-    int shift, size;
+    unsigned int shift, size;
     string str;
     string fileName = header.name;
 
@@ -127,11 +127,11 @@ void LZ77Compress::Extract(ifstream& archiveFile, file_header& header){
 
 
         position = 0;
-        while(position < TEXT_IN.size()){
-            shift = atoi(TEXT_IN.substr(position, 1).c_str());
+        while(position < TEXT_IN.size()){   //todo buts -> int
+            auto shiftSize = toInt(TEXT_IN[position]);
             position++;
-            size = atoi(TEXT_IN.substr(position, 1).c_str());
-            position++;
+            shift = shiftSize[0];
+            size = shiftSize[1];
 
             if(shift == 0){
 
@@ -154,18 +154,18 @@ void LZ77Compress::Extract(ifstream& archiveFile, file_header& header){
             else{
 
                 /////
-                cout << "DEBUG: shift > 0 "  <<  endl;
+                cout << "DEBUG: shift = "  << shift  <<  endl;
                 /////
-
 
 
                 for(int i = 0; i < size; i++){
                     str = TEXT_OUT[TEXT_OUT.size()-shift];
+                    /////
+                    cout << "DEBUG: writing " << str <<  endl;
+                    /////
                     TEXT_OUT.append(str);
                 }
-                /////
-                cout << "DEBUG: writing " << str << " " <<  size << " times" <<  endl;
-                /////
+
 
                 if(position < TEXT_IN.size()) {
                     str = TEXT_IN.substr(position, 1);
@@ -212,7 +212,7 @@ void LZ77Compress::encodeLZ77() {
             /////
 
             // Cant find any byte from buffer
-            builder << "00" << strToAnalyze;
+            builder << toByte(0, 0) << strToAnalyze;
 
             /////
             cout << "DEBUG: written:  " << "00" << strToAnalyze <<  endl << endl;
@@ -230,19 +230,17 @@ void LZ77Compress::encodeLZ77() {
             SL.first = position - windowStartPos - window.find(strToAnalyze );
             while(window.find(strToAnalyze ) != std::string::npos && SL.second < maxChunkLength && position < TEXT_IN.size())
             {
-
                 SL.second++;
                 position++;
 
                 /////
                 cout << "DEBUG: found " << strToAnalyze << " in " << window <<  endl;
                 /////
-
                 /////
-                cout << "DEBUG: pos:  " << position << " size: " << TEXT_IN.size() << endl << endl;
+                cout << "DEBUG: shift: " << SL.first <<  endl;
                 /////
 
-                updateWindow();
+                //updateWindow();
                 if(position < TEXT_IN.size()) {
                     if (strToAnalyze.find(TEXT_IN.substr(position, 1)) != string::npos) {
                         strToAnalyze.append(TEXT_IN.substr(position, 1));
@@ -255,17 +253,17 @@ void LZ77Compress::encodeLZ77() {
 
             if(position < TEXT_IN.size()){
 
-                builder << SL.first << SL.second << TEXT_IN.substr(position, 1);
+                builder << toByte(SL.first, SL.second) << TEXT_IN.substr(position, 1);
 
                 /////
-                cout << "DEBUG: written:  " << SL.first << SL.second << TEXT_IN.substr(position, 1) << endl << endl;
+                cout << "DEBUG: written:  " << toByte(SL.first, SL.second) << TEXT_IN.substr(position, 1) << endl << endl;
                 /////
 
                 position++;
 
             }
             else{
-                builder << SL.first << SL.second << "";
+                builder << toByte(SL.first, SL.second) << "";
 
                 /////
                 cout << "DEBUG: written:  " << SL.first << SL.second <<  endl << endl;
@@ -308,8 +306,24 @@ void LZ77Compress::updateWindow() {
     }
 
     windowStartPos = pos;
+}
 
 
+char LZ77Compress::toByte(unsigned int s, unsigned int l) {
+    char c;
+
+    c = (char)((s << 4) | (l & 15));
+
+    return c;
+
+}
+vector<unsigned int> LZ77Compress::toInt(const char c){
+    vector<unsigned int> sl;
+
+    sl.emplace_back((unsigned int)((c >> 4) & 15));
+    sl.emplace_back((unsigned int)(c & 15));
+
+    return sl;
 
 }
 

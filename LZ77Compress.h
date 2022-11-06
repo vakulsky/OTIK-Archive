@@ -18,8 +18,8 @@ private:
     std::string window; // contains the string where will search matches
     /** END BUFFERS **/
 
-    unsigned int maxChunkLength = 9;
-    unsigned int windowSize = 9;
+    unsigned int maxChunkLength = 15;
+    unsigned int windowSize = 7;
     unsigned int position;
     unsigned int windowStartPos;
 
@@ -30,7 +30,11 @@ private:
 
     void updateWindow();
 
+
 public:
+
+    char toByte(unsigned int s, unsigned int l);
+    vector<unsigned int> toInt(const char c);
 
     int Compress(const string& fileName, const string& archiveName, bool writeHeader);
     void Extract(ifstream& archiveFile, file_header& header);

@@ -21,9 +21,9 @@ private:
 
 public:
     RLECompress(){
-        Lmax = 12;
+        Lmax = 9;
         a = 3;
-        b = 3;
+        b = 1;
     }
 
     int Compress(const string& fileName, const string& archiveName, bool writeHeader);
