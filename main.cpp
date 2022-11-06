@@ -49,4 +49,27 @@ int main(int argv, char* argc[])
     }
     cout<<endl<<"----------------------------------------------------------"<<endl<<endl;
 
+
+
+
+//    LZ77Compress cc;
+//    char c = cc.toByte(1, 4);
+//
+//    auto res = cc.toInt(c);
+//
+//    cout << "DEBUG: int -> byte -> int" << endl;
+//    for(auto n : res){
+//        cout << n << endl;
+//    };
+
+
+//    unsigned int s=5, l=12;  //12 = 1100, 5 = 101  =>   10101100
+//    int win=5, len=15;
+//    cout << "(s << win): " << (s << win) << endl;
+//    cout << "(l & len): " << (l & len) << endl << endl;
+//    cout << "(s << win) | (l & len): " << ((s << win) | (l & len)) << endl;
+
+
+
+
 }

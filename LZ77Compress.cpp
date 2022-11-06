@@ -127,11 +127,11 @@ void LZ77Compress::Extract(ifstream& archiveFile, file_header& header){
 
 
         position = 0;
-        while(position < TEXT_IN.size()){
-            shift = atoi(TEXT_IN.substr(position, 1).c_str());
+        while(position < TEXT_IN.size()){   //todo buts -> int
+            auto shiftSize = toInt(TEXT_IN[position]);
             position++;
-            size = atoi(TEXT_IN.substr(position, 1).c_str());
-            position++;
+            shift = shiftSize[0];
+            size = shiftSize[1];
 
             if(shift == 0){
 
@@ -154,7 +154,7 @@ void LZ77Compress::Extract(ifstream& archiveFile, file_header& header){
             else{
 
                 /////
-                cout << "DEBUG: shift > 0 "  <<  endl;
+                cout << "DEBUG: shift = "  << shift  <<  endl;
                 /////
 
 
@@ -212,7 +212,7 @@ void LZ77Compress::encodeLZ77() {
             /////
 
             // Cant find any byte from buffer
-            builder << "00" << strToAnalyze;
+            builder << toByte(0, 0) << strToAnalyze;
 
             /////
             cout << "DEBUG: written:  " << "00" << strToAnalyze <<  endl << endl;
@@ -228,9 +228,12 @@ void LZ77Compress::encodeLZ77() {
         {
             // We founded any byte from buffer in inspection
             SL.first = position - windowStartPos - window.find(strToAnalyze );
+
+            /////
+            cout << "DEBUG: found, shift: " << SL.first <<  endl;
+            /////
             while(window.find(strToAnalyze ) != std::string::npos && SL.second < maxChunkLength && position < TEXT_IN.size())
             {
-
                 SL.second++;
                 position++;
 
@@ -238,11 +241,7 @@ void LZ77Compress::encodeLZ77() {
                 cout << "DEBUG: found " << strToAnalyze << " in " << window <<  endl;
                 /////
 
-                /////
-                cout << "DEBUG: pos:  " << position << " size: " << TEXT_IN.size() << endl << endl;
-                /////
-
-                updateWindow();
+                //updateWindow();
                 if(position < TEXT_IN.size()) {
                     if (strToAnalyze.find(TEXT_IN.substr(position, 1)) != string::npos) {
                         strToAnalyze.append(TEXT_IN.substr(position, 1));
@@ -255,17 +254,17 @@ void LZ77Compress::encodeLZ77() {
 
             if(position < TEXT_IN.size()){
 
-                builder << SL.first << SL.second << TEXT_IN.substr(position, 1);
+                builder << toByte(SL.first, SL.second) << TEXT_IN.substr(position, 1);
 
                 /////
-                cout << "DEBUG: written:  " << SL.first << SL.second << TEXT_IN.substr(position, 1) << endl << endl;
+                cout << "DEBUG: written:  " << toByte(SL.first, SL.second) << TEXT_IN.substr(position, 1) << endl << endl;
                 /////
 
                 position++;
 
             }
             else{
-                builder << SL.first << SL.second << "";
+                builder << toByte(SL.first, SL.second) << "";
 
                 /////
                 cout << "DEBUG: written:  " << SL.first << SL.second <<  endl << endl;
@@ -308,8 +307,24 @@ void LZ77Compress::updateWindow() {
     }
 
     windowStartPos = pos;
+}
 
 
+char LZ77Compress::toByte(unsigned int s, unsigned int l) {
+    char c;
+
+    c = (char)((s << 5) | (l & 15));
+
+    return c;
+
+}
+vector<unsigned int> LZ77Compress::toInt(const char c){
+    vector<unsigned int> sl;
+
+    sl.emplace_back((unsigned int)((c >> 5) & 15));
+    sl.emplace_back((unsigned int)(c & 15));
+
+    return sl;
 
 }
 
