@@ -53,7 +53,7 @@ int main(int argv, char* argc[])
 
 
 //    LZ77Compress cc;
-//    char c = cc.toByte(1, 4);
+//    char c = cc.toByte(6, 4);
 //
 //    auto res = cc.toInt(c);
 //

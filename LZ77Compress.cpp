@@ -104,7 +104,7 @@ int LZ77Compress::Compress(const string& fileName, const string& archiveName, bo
 void LZ77Compress::Extract(ifstream& archiveFile, file_header& header){
 
     ofstream file;
-    int shift, size;
+    unsigned int shift, size;
     string str;
     string fileName = header.name;
 
@@ -158,14 +158,14 @@ void LZ77Compress::Extract(ifstream& archiveFile, file_header& header){
                 /////
 
 
-
                 for(int i = 0; i < size; i++){
                     str = TEXT_OUT[TEXT_OUT.size()-shift];
+                    /////
+                    cout << "DEBUG: writing " << str <<  endl;
+                    /////
                     TEXT_OUT.append(str);
                 }
-                /////
-                cout << "DEBUG: writing " << str << " " <<  size << " times" <<  endl;
-                /////
+
 
                 if(position < TEXT_IN.size()) {
                     str = TEXT_IN.substr(position, 1);
@@ -228,10 +228,6 @@ void LZ77Compress::encodeLZ77() {
         {
             // We founded any byte from buffer in inspection
             SL.first = position - windowStartPos - window.find(strToAnalyze );
-
-            /////
-            cout << "DEBUG: found, shift: " << SL.first <<  endl;
-            /////
             while(window.find(strToAnalyze ) != std::string::npos && SL.second < maxChunkLength && position < TEXT_IN.size())
             {
                 SL.second++;
@@ -239,6 +235,9 @@ void LZ77Compress::encodeLZ77() {
 
                 /////
                 cout << "DEBUG: found " << strToAnalyze << " in " << window <<  endl;
+                /////
+                /////
+                cout << "DEBUG: shift: " << SL.first <<  endl;
                 /////
 
                 //updateWindow();
@@ -313,7 +312,7 @@ void LZ77Compress::updateWindow() {
 char LZ77Compress::toByte(unsigned int s, unsigned int l) {
     char c;
 
-    c = (char)((s << 5) | (l & 15));
+    c = (char)((s << 4) | (l & 15));
 
     return c;
 
@@ -321,7 +320,7 @@ char LZ77Compress::toByte(unsigned int s, unsigned int l) {
 vector<unsigned int> LZ77Compress::toInt(const char c){
     vector<unsigned int> sl;
 
-    sl.emplace_back((unsigned int)((c >> 5) & 15));
+    sl.emplace_back((unsigned int)((c >> 4) & 15));
     sl.emplace_back((unsigned int)(c & 15));
 
     return sl;
