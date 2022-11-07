@@ -6,19 +6,10 @@
 #define OTIK_ARCHIVE_ARCHIVER_H
 
 #include "LZ77Compress.h"
-
+#include "CompressType.h"
 
 
 using namespace std;
-
-enum CompressType{
-    PACK,
-    SHANNON,
-    INTELLIGENT,
-    RLE,
-    LZ77,
-    TESTALL
-};
 
 class Archiver {
 
@@ -35,11 +26,10 @@ public:
         archive_file = path;
     }
 
-    void Compress(CompressType);
+    void Compress(vector<CompressType> algorithms);
     void Extract(const string& archive_file);
-    void intelligentArchive();
-    void compressAllMethods();
-
+    void intelligentArchive(const string& fileName, file_header& header);
+    file_header buildHeader(const string& fileName, const vector<CompressType>& algorithms);
 
 
     static string get_file_name(string filename) {

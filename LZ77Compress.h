@@ -25,7 +25,6 @@ private:
 
     std::pair< unsigned int, unsigned int> SL = {0, 0};
 
-    file_header buildHeader(const string& fileName);
     void encodeLZ77();
 
     void updateWindow();
@@ -36,7 +35,7 @@ public:
     char toByte(unsigned int s, unsigned int l);
     vector<unsigned int> toInt(const char c);
 
-    int Compress(const string& fileName, const string& archiveName, bool writeHeader);
+    int Compress(const string& fileName, const string& archiveName, bool writeHeader, file_header& header);
     void Extract(ifstream& archiveFile, file_header& header);
 
 

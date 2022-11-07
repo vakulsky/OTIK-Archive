@@ -27,7 +27,6 @@ private:
     void analyzeUTF8(const string& currentSymbol);
     void shannonCodes();
     int writeToFile(const string& file, const string& archiveName, file_header& header, bool writeHeader);
-    file_header buildHeader(const string& file);
 
 
     static vector<string> divideString(const string& text){
@@ -61,7 +60,7 @@ private:
     }
 
 public:
-    int Compress(const string& file, const string& archiveName, bool writeHeader);
+    int Compress(const string& file, const string& archiveName, bool writeHeader, file_header& header);
     void Extract(ifstream& archiveFile, file_header& header);
 
 

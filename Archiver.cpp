@@ -6,32 +6,65 @@
 
 using namespace std;
 
-void Archiver::Compress(CompressType type) {
-    switch (type) {
-        case PACK:
-            for(auto file : files)
-                packer.Pack(file, archive_file, true);
-            break;
-        case SHANNON:
-            for(auto file : files)
-                shannonCompressor.Compress(file, archive_file, true);
+void Archiver::Compress(vector<CompressType> algorithms) {
+    string fileIN;
+    string fileOUT;
+    bool writeHeader;
 
-            break;
-        case RLE:
-            for(auto file : files)
-                RLECompressor.Compress(file, archive_file, true);
-            break;
 
-        case LZ77:
-            for(auto file : files)
-                LZ77Compressor.Compress(file, archive_file, true);
-            break;
-        case INTELLIGENT:
-            intelligentArchive();
+    for(const auto& file : files){
+        file_header header = buildHeader(file, algorithms);
 
-        case TESTALL:
-            compressAllMethods();
+        for(int i = 0; i < algorithms.size(); i++) {
+
+            fileIN = file + to_string(i-1);
+            fileOUT = file + to_string(i);
+            writeHeader = false;
+
+            if(i == 0){
+                fileIN = file;
+                fileOUT = file + to_string(i);
+                writeHeader = false;
+            }
+
+            if(i == algorithms.size()-1){
+                fileIN = file + to_string(i-1);
+                fileOUT = archive_file;
+                writeHeader = true;
+            }
+
+            if(algorithms.size() == 1){
+                fileIN = file;
+                fileOUT = archive_file;
+                writeHeader = true;
+
+            }
+
+            switch (algorithms[i]) {
+
+                case PACK:
+                    packer.Pack(fileIN, fileOUT, writeHeader, header);
+                    break;
+
+                case SHANNON:
+                    shannonCompressor.Compress(fileIN, fileOUT, writeHeader, header);
+                    break;
+
+                case RLE:
+                    RLECompressor.Compress(fileIN, fileOUT, writeHeader, header);
+                    break;
+
+                case LZ77:
+                    LZ77Compressor.Compress(fileIN, fileOUT, writeHeader, header);
+                    break;
+
+                case INTELLIGENT:
+                    intelligentArchive(file, header);
+            }
+        }
     }
+
+
 }
 
 
@@ -102,60 +135,81 @@ void Archiver::Compress(CompressType type) {
 
     }
 
-void Archiver::intelligentArchive(){
-    for(auto file : files){
+void Archiver::intelligentArchive(const string& fileName, file_header& header){
 
-        int packSize = packer.Pack(file, archive_file+"_packTMP", false),
-            shannonSize = shannonCompressor.Compress(file, archive_file+"_shannonTMP", false),
-            RLESize = RLECompressor.Compress(file, archive_file+"_rleTMP", false),
-            LZ77Size = LZ77Compressor.Compress(file, archive_file+"_lz77TMP", false);
 
-        if( packSize <= shannonSize &&  packSize <= RLESize  &&  packSize <= LZ77Size){
-            packer.Pack(file, archive_file, true);
-            remove((archive_file+"_shannonTMP").c_str());
-            remove((archive_file+"_packTMP").c_str());
-            remove((archive_file+"_rleTMP").c_str());
-            remove((archive_file+"_lz77TMP").c_str());
-        }
+    int packSize = packer.Pack(fileName, archive_file+"_packTMP", false, header),
+        shannonSize = shannonCompressor.Compress(fileName, archive_file+"_shannonTMP", false, header),
+        RLESize = RLECompressor.Compress(fileName, archive_file+"_rleTMP", false, header),
+        LZ77Size = LZ77Compressor.Compress(fileName, archive_file+"_lz77TMP", false, header);
 
-        if( shannonSize <= RLESize &&  shannonSize <= packSize &&  shannonSize <= LZ77Size){
-            shannonCompressor.Compress(file, archive_file, true);
-            remove((archive_file+"_shannonTMP").c_str());
-            remove((archive_file+"_packTMP").c_str());
-            remove((archive_file+"_rleTMP").c_str());
-            remove((archive_file+"_lz77TMP").c_str());
-        }
-
-        if( RLESize <= shannonSize &&  RLESize <= packSize &&  RLESize <= LZ77Size){
-            RLECompressor.Compress(file, archive_file, true);
-            remove((archive_file+"_shannonTMP").c_str());
-            remove((archive_file+"_packTMP").c_str());
-            remove((archive_file+"_rleTMP").c_str());
-            remove((archive_file+"_lz77TMP").c_str());
-        }
-
-        if( LZ77Size <= shannonSize &&  LZ77Size <= packSize &&  LZ77Size <= RLESize){
-            LZ77Compressor.Compress(file, archive_file, true);
-            remove((archive_file+"_shannonTMP").c_str());
-            remove((archive_file+"_packTMP").c_str());
-            remove((archive_file+"_rleTMP").c_str());
-            remove((archive_file+"_lz77TMP").c_str());
-        }
+    if( packSize <= shannonSize &&  packSize <= RLESize  &&  packSize <= LZ77Size){
+        packer.Pack(fileName, archive_file, true, header);
+        remove((archive_file+"_shannonTMP").c_str());
+        remove((archive_file+"_packTMP").c_str());
+        remove((archive_file+"_rleTMP").c_str());
+        remove((archive_file+"_lz77TMP").c_str());
     }
 
+    if( shannonSize <= RLESize &&  shannonSize <= packSize &&  shannonSize <= LZ77Size){
+        shannonCompressor.Compress(fileName, archive_file, true, header);
+        remove((archive_file+"_shannonTMP").c_str());
+        remove((archive_file+"_packTMP").c_str());
+        remove((archive_file+"_rleTMP").c_str());
+        remove((archive_file+"_lz77TMP").c_str());
+    }
+
+    if( RLESize <= shannonSize &&  RLESize <= packSize &&  RLESize <= LZ77Size){
+        RLECompressor.Compress(fileName, archive_file, true, header);
+        remove((archive_file+"_shannonTMP").c_str());
+        remove((archive_file+"_packTMP").c_str());
+        remove((archive_file+"_rleTMP").c_str());
+        remove((archive_file+"_lz77TMP").c_str());
+    }
+
+    if( LZ77Size <= shannonSize &&  LZ77Size <= packSize &&  LZ77Size <= RLESize){
+        LZ77Compressor.Compress(fileName, archive_file, true, header);
+        remove((archive_file+"_shannonTMP").c_str());
+        remove((archive_file+"_packTMP").c_str());
+        remove((archive_file+"_rleTMP").c_str());
+        remove((archive_file+"_lz77TMP").c_str());
+    }
+}
+
+
+file_header Archiver::buildHeader(const string& fileName, const vector<CompressType>& algorithms)
+{
+    file_header header{};
+    ifstream file;
+    string algos;
+
+    file.open(fileName);
+    if(!file) {
+        cout << "Can't open file " << fileName << endl;
+    }
+    else {
+
+        file.seekg( 0, std::ios::end );
+        int fileSize = (int)(file.tellg());
+
+        string name = Packer::getFileName(fileName);  // get file name
+        
+        for(auto algo : algorithms){
+            algos.append(to_string(algo));
+        }
+
+        memset( &header, 0, sizeof( struct file_header ) );
+        snprintf( header.signature, SIGNATURE_SZ, "%s", SIGN  );
+        snprintf( header.name, NAME_SZ, "%s", name.c_str()  );
+        snprintf( header.version, VERSION_SZ, "%s", VERSION );
+        snprintf( header.size, SIZE_SZ, "%d", fileSize );
+        snprintf( header.algorithm, ALGORITHM_SZ, "%s", algos.c_str() );
+    }
+
+    return header;
 }
 
 
-void Archiver::compressAllMethods(){
-    cout << "***NOTE: FOR TESTS ONLY. YOU WON'T BE ABLE TO EXTRACT FILES!!***" << endl;
-    for(const auto& file : files){
-        packer.Pack(file, archive_file, true);
-        shannonCompressor.Compress(file, archive_file, false);
-        RLECompressor.Compress(file, archive_file, false);
-        LZ77Compressor.Compress(file, archive_file, false);
-
-    }
-}
 
 
 

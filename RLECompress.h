@@ -15,7 +15,6 @@ private:
             a,  //Lmax - 3
             b;  //Lmax - 1
 
-    file_header buildHeader(const string& fileName);
     void writeToArchive( ofstream& archive, const string& sequenceString);
     void writeToArchive( ofstream& archive, const char repeatedChar, int count);
 
@@ -26,7 +25,7 @@ public:
         b = 1;
     }
 
-    int Compress(const string& fileName, const string& archiveName, bool writeHeader);
+    int Compress(const string& fileName, const string& archiveName, bool writeHeader, file_header& header);
     void Extract(ifstream& archiveFile, file_header& header);
 
 

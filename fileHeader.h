@@ -5,15 +5,15 @@
 #ifndef OTIK_ARCHIVE_FILEHEADER_H
 #define OTIK_ARCHIVE_FILEHEADER_H
 
-#define VERSION "2"
+#define VERSION "3"
 #define SIGN "SVSA"
 #define HEADER_SZ 128
 #define SIGNATURE_SZ 8
 #define NAME_SZ 50
 #define VERSION_SZ 8
 #define SIZE_SZ 12
-#define ALGORITHM_SZ 6
-#define PADDING_SZ 44
+#define ALGORITHM_SZ 4
+#define PADDING_SZ 46
 
 struct file_header {
     char signature[SIGNATURE_SZ];
