@@ -20,6 +20,11 @@ private:
     Shannon shannonCompressor;
     RLECompress RLECompressor;
     LZ77Compress LZ77Compressor;
+
+    void CallExtractor(CompressType type, ifstream& fileIN, const string& fileOutName, file_header& header);
+    file_header buildHeader(const string& fileName, const vector<CompressType>& algorithms);
+    vector<CompressType> parseAlgCodes(file_header& header);
+
 public:
     Archiver(vector<string> &vec, string path) {
         if (vec.size() > 0) files.assign(vec.begin(), vec.end());
@@ -29,7 +34,6 @@ public:
     void Compress(vector<CompressType> algorithms);
     void Extract(const string& archive_file);
     void intelligentArchive(const string& fileName, file_header& header);
-    file_header buildHeader(const string& fileName, const vector<CompressType>& algorithms);
 
 
     static string get_file_name(string filename) {

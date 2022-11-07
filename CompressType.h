@@ -8,9 +8,9 @@
 enum CompressType{
     PACK,
     SHANNON,
-    INTELLIGENT,
     RLE,
-    LZ77
+    LZ77,
+    INTELLIGENT,
 };
 
 #endif //OTIK_ARCHIVE_COMPRESSTYPE_H

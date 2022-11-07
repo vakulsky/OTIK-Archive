@@ -53,24 +53,24 @@ int Packer::Pack(const string& fileName, const string& archiveName, bool writeHe
 
 
 
-void Packer::Unpack(ifstream& archiveFile, file_header& header) {
+void Packer::Unpack(ifstream& archiveFile, const string& fileName, int fileSize) {
 
     char buff[1];
     ofstream outputFile;
-    outputFile.open(header.name);
+    outputFile.open(fileName);
     if(!outputFile) {
-        cout << "Can't open file " << header.name << endl;
+        cout << "Can't open file " << fileName << endl;
     }
     else {
 
 
-        for(int i =0 ; i < atoi(header.size); i++) {
+        for(int i =0 ; i < fileSize; i++) {
             archiveFile.read(buff, 1);
             outputFile.write(buff, 1);
         }
         //reading '\n'
         archiveFile.read(buff, 1);
-        cout << "--- " << header.name << " is extracted ---" << endl;
+        cout << "--- " << fileName << " is extracted ---" << endl;
 
         outputFile.close();
     }

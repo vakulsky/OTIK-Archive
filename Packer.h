@@ -18,7 +18,7 @@ public:
     int Pack(const string& file, const string& archiveName, bool writeHeader, file_header& header);
 
     //get single file from archive
-    void Unpack(ifstream& archiveFile, file_header& header);
+    void Unpack(ifstream& archiveFile, const string& fileName, int fileSize);
 
     static string getFileName(const string& filename) {
         return filename.substr(filename.find_last_of("\\") + 1, filename.size());

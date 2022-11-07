@@ -112,11 +112,10 @@ int RLECompress::Compress(const string& fileName, const string& archiveName, boo
 }
 
 
-void RLECompress::Extract(ifstream& archiveFile, file_header& header){
+void RLECompress::Extract(ifstream& archiveFile, const string& fileName){
 
     ofstream file;
     char buff[1];
-    string fileName = header.name;
     char sequenceAccum[Lmax+2];
     int count;
 

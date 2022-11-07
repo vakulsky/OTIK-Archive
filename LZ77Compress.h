@@ -36,7 +36,7 @@ public:
     vector<unsigned int> toInt(const char c);
 
     int Compress(const string& fileName, const string& archiveName, bool writeHeader, file_header& header);
-    void Extract(ifstream& archiveFile, file_header& header);
+    void Extract(ifstream& archiveFile, const string& fileName);
 
 
 

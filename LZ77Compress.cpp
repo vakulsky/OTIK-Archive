@@ -74,12 +74,11 @@ int LZ77Compress::Compress(const string& fileName, const string& archiveName, bo
 
 
 
-void LZ77Compress::Extract(ifstream& archiveFile, file_header& header){
+void LZ77Compress::Extract(ifstream& archiveFile, const string& fileName){
 
     ofstream file;
     unsigned int shift, size;
     string str;
-    string fileName = header.name;
 
 
     file.open(fileName, ios::out);

@@ -163,7 +163,7 @@ int Shannon::writeToFile(const string& file, const string& archiveName, file_hea
     }
 }
 
-void Shannon::Extract(ifstream & archiveFile, file_header &header) {
+void Shannon::Extract(ifstream & archiveFile, const string& fileName) {
 
     string symbolsInTable,
                     accum,
@@ -171,7 +171,7 @@ void Shannon::Extract(ifstream & archiveFile, file_header &header) {
     char byte[1];
 
     ofstream extractedFile;
-    extractedFile.open(header.name);
+    extractedFile.open(fileName);
 
     getline(archiveFile, symbolsInTable);
 

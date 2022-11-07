@@ -73,7 +73,9 @@ void Archiver::Compress(vector<CompressType> algorithms) {
 
     void Archiver::Extract(const string& archiveName){
 
-        ifstream archiveFile;
+        ifstream archiveFile, fileTMP;
+        string fileIN;
+        string fileOUT;
 
         archiveFile.open(archiveName);
         if(!archiveFile) {
@@ -99,8 +101,8 @@ void Archiver::Compress(vector<CompressType> algorithms) {
                 /////
                 cout << "DEBUG | (sign from file): " << string(header.signature) << endl;
                 cout << "DEBUG | (version from file): " << string(header.version) << endl;
-                cout << "DEBUG | (alg code from file): " << string(header.algorithm) << endl;
-                cout << "DEBUG | (size code from file): " << string(header.size) << endl;
+                cout << "DEBUG | (algs codes from file): " << string(header.algorithm) << endl;
+                cout << "DEBUG | (size from file): " << string(header.size) << endl << endl;
                 /////
 
                 if (strcmp(header.signature, SIGN) != 0) {
@@ -114,19 +116,48 @@ void Archiver::Compress(vector<CompressType> algorithms) {
                     break;
                 }
 
-                if (strcmp(header.algorithm, "1") == 0) {
-                    shannonCompressor.Extract(archiveFile, header);
+                auto algos = parseAlgCodes(header);
+                for(int i = 0; i < algos.size(); i++){
+
+                    /////
+                    cout << "DEBUG | (alg code): " << algos[i] << endl;
+                    /////
+
+                    if(algos.size() == 1){
+                        fileOUT = header.name;
+                        CallExtractor(algos[i], archiveFile, fileOUT, header);
+
+                        continue;
+                    }
+
+                    if(i == 0){
+                        fileOUT = header.name + to_string(i);
+                        CallExtractor(algos[i], archiveFile, fileOUT, header);
+
+                        continue;
+                    }
+
+                    if(i == ALGORITHM_SZ-1){
+                        fileOUT = header.name;
+                        fileTMP.open(header.name + to_string(i-1));
+                        CallExtractor(algos[i], fileTMP, fileOUT, header);
+
+                        fileTMP.close();
+                        remove((header.name + to_string(i-1)).c_str());
+                        continue;
+
+                    }
+
+                    fileOUT = header.name + to_string(i);
+                    fileTMP.open(header.name + to_string(i-1));
+                    CallExtractor(algos[i], fileTMP, fileOUT, header);
+
+                    fileTMP.close();
+                    remove((header.name + to_string(i-1)).c_str());
+
                 }
-                else if(strcmp(header.algorithm, "0") == 0)
-                    packer.Unpack(archiveFile, header);
-                else if(strcmp(header.algorithm, "2") == 0)
-                    RLECompressor.Extract(archiveFile, header);
-                else if(strcmp(header.algorithm, "3") == 0)
-                    LZ77Compressor.Extract(archiveFile, header);
-                else {
-                    cout << "Error: Invalid algorithm code!" << endl;
-                    break;
-                }
+
+
 
 
             }
@@ -209,6 +240,54 @@ file_header Archiver::buildHeader(const string& fileName, const vector<CompressT
     return header;
 }
 
+
+void Archiver::CallExtractor(CompressType type, ifstream& fileIN, const string& fileOutName, file_header& header){
+
+    switch (type) {
+        case PACK:
+            packer.Unpack(fileIN, fileOutName, atoi(header.size));
+            break;
+
+        case SHANNON:
+            shannonCompressor.Extract(fileIN, fileOutName);
+            break;
+
+        case RLE:
+            RLECompressor.Extract(fileIN, fileOutName);
+            break;
+
+        case LZ77:
+            LZ77Compressor.Extract(fileIN, fileOutName);
+            break;
+        default:
+            cout << "Error: Invalid algorithm code!" << endl;
+
+    }
+
+
+
+}
+
+
+vector<CompressType> Archiver::parseAlgCodes(file_header& header){
+    vector<CompressType> v;
+    string c;
+
+    for(int i = 0; i < ALGORITHM_SZ; i++) {
+        c = header.algorithm[i];
+
+        /////
+        cout << "DEBUG | parsed algo code: " << c << endl;
+        /////
+
+        if(c == "0") v.emplace_back(PACK);
+        if(c == "1") v.emplace_back(SHANNON);
+        if(c == "2") v.emplace_back(RLE);
+        if(c == "3") v.emplace_back(LZ77);
+    }
+    reverse(v.begin(), v.end());
+    return v;
+}
 
 
 
