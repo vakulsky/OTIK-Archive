@@ -57,24 +57,29 @@ void Archiver::Compress(CompressType compressType, ErrorCorrection dataProtectio
         }
 
         //protect header if needed
+        string tempHeaderFileName = "header.header";
+        string protectedHeaderFileName = "header_protected.header";
+
+        //write header to temp file to protect
+        WriteHeaderToFile(header, tempHeaderFileName);
         switch (headerProtectionType) {
             case HAMMING:
-                toArchiveFileName = file.append("_protected");
-                hammingCodeProtector.AddProtection(tempFileName, toArchiveFileName);
+                hammingCodeProtector.AddProtection(tempHeaderFileName, protectedHeaderFileName);
                 break;
 
             case REEDSOL:
-                toArchiveFileName = file.append("_protected");
                 //todo add external lib with reed-solomon algo(filein, fileout)
                 break;
 
             case NONE:
-                toArchiveFileName = tempFileName;
+                //just copy to another file
+                protectedHeaderFileName = tempHeaderFileName;
                 break;
         }
 
         //write header + filedata to archive file
-        WriteToFile(header, toArchiveFileName, archiveFileName);
+        CopyToFile(protectedHeaderFileName, archiveFileName);
+        CopyToFile(toArchiveFileName, archiveFileName);
     }
 
 
@@ -213,10 +218,9 @@ file_header Archiver::buildHeader(const string& fileName, CompressType compressT
 }
 
 
-void Archiver::WriteToFile(const file_header& header, const string& inFileName, const string& outFileName){
+void Archiver::WriteHeaderToFile(const file_header& header, const string& outFileName){
 
     ofstream outFile;
-    ifstream inFile;
 
     outFile.open(outFileName, ios::app | ios::binary);
 
@@ -233,19 +237,28 @@ void Archiver::WriteToFile(const file_header& header, const string& inFileName, 
         outFile.write(header.algorithm, ALGORITHM_SZ);
         outFile.write(header.errorcorr, ERRORCORR_SZ);
         outFile.write(header.padding, PADDING_SZ);
+    }
+    outFile.close();
+}
 
+void Archiver::CopyToFile(const string& from, const string& to){
 
-        if(!inFileName.empty()){
-            //means also write inFile data
+    ofstream outFile;
+    ifstream inFile;
 
-            inFile.open(inFileName, ios::binary);
-            //writing data
-            std::copy(
-                    std::istreambuf_iterator<char>(inFile),
-                    std::istreambuf_iterator<char>( ),
-                    std::ostreambuf_iterator<char>(outFile));
-            inFile.close();
-        }
+    outFile.open(to, ios::app | ios::binary);
+
+    if(!outFile){
+        cout << "Error opening outFile!" << endl;
+    }
+    else{
+        inFile.open(from, ios::binary);
+        //writing data
+        std::copy(
+                std::istreambuf_iterator<char>(inFile),
+                std::istreambuf_iterator<char>( ),
+                std::ostreambuf_iterator<char>(outFile));
+        inFile.close();
     }
     outFile.close();
 }

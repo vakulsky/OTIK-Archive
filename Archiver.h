@@ -38,7 +38,8 @@ private:
 
     file_header buildHeader(const string& fileName, CompressType compressType, ErrorCorrection errorCorrection);
     void intelligentArchive(const string& inFileName, const string& outFileName);
-    static void WriteToFile(const file_header& header, const string& inFileName, const string& outFileName);
+    static void WriteHeaderToFile(const file_header& header, const string& outFileName);
+    static void CopyToFile(const string& from, const string& to);
     static int getFileSize(const string& fileName);
 public:
     Archiver(vector<string> &vec, string path) {
