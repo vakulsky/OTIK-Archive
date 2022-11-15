@@ -14,38 +14,62 @@ int main(int argv, char* argc[])
     {
         vector<string> files;  //files from console
         string path = "";  // path
-        bool flag_fs = false, flag_path = false;  // flags
-        char type[15];              // flag container
-        memset(type,0,7);
+        bool filesFlag = false,
+             pathFlag = false,
+             dataProtectionFlag = false,
+             headerProtectionFlag = false,
+             unpackFlag = false,
+             compressTypeFlag = false;  // flags
+
+        ErrorCorrection dataProtectionType = NONE,
+                        headerProtectionType = NONE;
+        CompressType compressType;
 
         for(int i=1;i<argv;i++)
-        {
-            if(strcmp(argc[i],"-pack")==0) { strcpy(type,argc[i+1]); flag_fs=flag_path=false;}
-            //todo choose between normal pack, Shannon and intelligent
-            if(strcmp(argc[i],"-unpack")==0) { strcpy(type,"unpack"); flag_fs=flag_path=false;}
-            if(strcmp(argc[i],"-path")==0) {flag_path=true; flag_fs=false; continue; }
-            if(strcmp(argc[i],"-files")==0) {flag_fs=true; flag_path=false; continue; }
+        { //filesFlag=pathFlag=dataProtectionFlag=headerProtectionFlag=unpackFlag=compressTypeFlag
+            if(strcmp(argc[i],"-pack")==0) { compressTypeFlag=true; filesFlag=pathFlag=dataProtectionFlag=headerProtectionFlag=unpackFlag=false; continue;}
+            if(strcmp(argc[i],"-protectData")==0) { dataProtectionFlag=true; filesFlag=pathFlag=headerProtectionFlag=unpackFlag=compressTypeFlag=false; continue;}
+            if(strcmp(argc[i],"-protectHeader")==0) { headerProtectionFlag=true; filesFlag=pathFlag=dataProtectionFlag=unpackFlag=compressTypeFlag=false; continue;}
+            if(strcmp(argc[i],"-unpack")==0) { unpackFlag = true; continue;}
+            if(strcmp(argc[i],"-path")==0) { pathFlag=true; filesFlag=dataProtectionFlag=headerProtectionFlag=unpackFlag=compressTypeFlag=false; continue; }
+            if(strcmp(argc[i],"-files")==0) { filesFlag=true; pathFlag=dataProtectionFlag=headerProtectionFlag=unpackFlag=compressTypeFlag=false; continue; }
 
-            if(flag_path) {path.assign(argc[i]); }
-            if(flag_fs) files.emplace_back(argc[i]);
+            if(pathFlag) {path.assign(argc[i]); }
+            if(filesFlag) files.emplace_back(argc[i]);
+            if(compressTypeFlag){
+                if(strcmp(argc[i],"norman")==0) compressType = PACK;
+                if(strcmp(argc[i],"shannon")==0) compressType = SHANNON;
+                if(strcmp(argc[i],"intelligent")==0) compressType = INTELLIGENT;
+                if(strcmp(argc[i],"rle")==0) compressType = RLE;
+                if(strcmp(argc[i],"lz77")==0) compressType = LZ77;
+            }
+
+            if(dataProtectionFlag){
+                if(strcmp(argc[i],"hamming")==0) dataProtectionType = HAMMING;
+                if(strcmp(argc[i],"shannon")==0) dataProtectionType = REEDSOL;
+            }
+
+            if(headerProtectionFlag){
+                if(strcmp(argc[i],"hamming")==0) headerProtectionType = HAMMING;
+                if(strcmp(argc[i],"shannon")==0) headerProtectionType = REEDSOL;
+            }
         }
 
-        Archiver zip(files, path);
-        if(strcmp(type,"normal")==0) zip.Compress(PACK);
-        if(strcmp(type,"shannon")==0) zip.Compress(SHANNON);
-        if(strcmp(type,"intelligent")==0) zip.Compress(INTELLIGENT);
-        if(strcmp(type,"rle")==0) zip.Compress(RLE);
-        if(strcmp(type,"lz77")==0) zip.Compress(LZ77);
 
-        if(strcmp(type,"testall")==0) zip.Compress(TESTALL);
-        if(strcmp(type,"unpack")==0) zip.Extract(files[0]);
+        Archiver zip(files, path);
+        if(unpackFlag){
+            zip.Extract(files[0]);
+        }
+        else{
+            zip.Compress(compressType, dataProtectionType, headerProtectionType);
+        }
     }
     else {
         cout << "USAGE:" << endl;
-        cout << "-pack <normal | shannon | rle | lz77 | intelligent | testall> -files <files to compress> "
+        cout << "-pack <normal | shannon | rle | lz77 | intelligent> -protectData <hamming | reedsol> -protectHeader <hamming | reedsol> -files <files to compress> "
                 "-path <folder_to_save_archive_file>" << endl;
         cout << "OR" << endl;
-        cout << "-unpack -files <archive_file> -path <path for extracted files>" << endl;
+        cout << "-unpack -files <archiveFileName> -path <path for extracted files>" << endl;
     }
     cout<<endl<<"----------------------------------------------------------"<<endl<<endl;
 

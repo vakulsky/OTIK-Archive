@@ -4,7 +4,7 @@
 
 #include "Shannon.h"
 
-int Shannon::Compress(const string& file, const string& archiveName, bool writeHeader){
+void Shannon::Compress(const string& inFileName, const string& outFileName){
 
     ifstream f;
     string str;
@@ -13,10 +13,10 @@ int Shannon::Compress(const string& file, const string& archiveName, bool writeH
     codes.clear();
     symbolsAmount = 0;
 
-    f.open(file);
+    f.open(inFileName);
     if(!f) {
-        cout << "Can't read file " << file << endl;
-        return compressedSize;
+        cout << "Can't read inFileName " << inFileName << endl;
+
     }
     else {
         while (getline(f, str)) {
@@ -36,11 +36,7 @@ int Shannon::Compress(const string& file, const string& archiveName, bool writeH
         }
         /////
 
-        file_header header = buildHeader(file);
-        compressedSize = writeToFile(file, archiveName, header, writeHeader);
-
-        return compressedSize;
-
+        writeToFile(inFileName, outFileName);
     }
 
 }
@@ -102,57 +98,19 @@ void Shannon::shannonCodes() {
     /////
 }
 
-file_header Shannon::buildHeader(const string& fileName)
-{
-    file_header header{};
-    ifstream file;
 
-    file.open(fileName, ios_base::in);
-    if(!file) {
-        cout << "Can't open file " << fileName << endl;
-    }
-    else {
-
-        file.seekg( 0, std::ios::end );
-        int fileSize = (int)(file.tellg());
-
-        /////
-        cout << "DEBUG | (FILESIZE): " << fileSize << endl;
-        /////
-
-        memset(&header, 0, sizeof(struct file_header));
-        snprintf(header.signature, SIGNATURE_SZ, "%s", SIGN);
-        snprintf(header.name, NAME_SZ, "%s", fileName.c_str());
-        snprintf(header.version, VERSION_SZ, "%s", VERSION);
-        snprintf(header.size, SIZE_SZ, "%d", fileSize);
-        snprintf(header.algorithm, ALGORITHM_SZ, "%s", "1");
-    }
-    return header;
-}
-
-int Shannon::writeToFile(const string& file, const string& archiveName, file_header& header, bool writeHeader) {
+void Shannon::writeToFile(const string& inFileName, const string& outFileName) {
 
     ofstream archive;
     ifstream fileStream;
     string str;
 
-    archive.open(archiveName, ios::app);
+    archive.open(outFileName, ios::app);
     if (!archive) {
-        cout << "Can't open file " << archiveName << endl;
-        return 0;
+        cout << "Can't open inFileName " << outFileName << endl;
+
     } else {
 
-        if(writeHeader) {
-            //writing header
-            archive.write(header.signature, SIGNATURE_SZ);
-            archive.write(header.name, NAME_SZ);
-            archive.write(header.version, VERSION_SZ);
-            archive.write(header.size, SIZE_SZ);
-            archive.write(header.algorithm, ALGORITHM_SZ);
-            archive.write(header.padding, PADDING_SZ);
-        }
-
-        auto size = archive.tellp();
 
         //writing table size (symbols in table)
         archive << codes.size() << endl;
@@ -162,9 +120,9 @@ int Shannon::writeToFile(const string& file, const string& archiveName, file_hea
             archive << code.first  << code.second.second << endl;
         }
 
-        fileStream.open(file);
+        fileStream.open(inFileName);
         if (!fileStream) {
-            cout << "Can't read file " << file << endl;
+            cout << "Can't read inFileName " << inFileName << endl;
         } else {
             while (getline(fileStream, str)) {
                 vector<string> syms = divideString(str);
@@ -184,10 +142,7 @@ int Shannon::writeToFile(const string& file, const string& archiveName, file_hea
 
 
         };
-        size = archive.tellp() - size;
         archive.close();
-
-        return size;
     }
 }
 

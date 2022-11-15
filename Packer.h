@@ -14,11 +14,8 @@ private:
 public:
     Packer() {};
 
-
-    file_header buildHeader(const string& fileName);
-
-    //pack single file to archive. Return: size in archive
-    int Pack(const string& file, const string& archiveName, bool writeHeader);
+    //pack single inFileName to archive. Return: size in archive
+    void Pack(const string& inFileName, const string& outFileName);
 
     //get single file from archive
     void Unpack(ifstream& archiveFile, file_header& header);

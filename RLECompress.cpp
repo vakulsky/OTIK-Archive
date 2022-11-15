@@ -4,7 +4,7 @@
 
 #include "RLECompress.h"
 
-int RLECompress::Compress(const string& fileName, const string& archiveName, bool writeHeader) {
+void RLECompress::Compress(const string& inFileName, const string& outFileName) {
 
     ifstream file;
     ofstream archive;
@@ -16,31 +16,16 @@ int RLECompress::Compress(const string& fileName, const string& archiveName, boo
     bool firstIteration = true;
 
 
-    file.open(fileName, ios::in);
+    file.open(inFileName, ios::in);
     file.seekg(0, ios::beg);
-    archive.open(archiveName, ios::app);
+    archive.open(outFileName, ios::app);
     if (!file) {
-        cout << "Can't read file " << fileName << endl;
-        return 0;
+        cout << "Can't read file " << inFileName << endl;
+
     } else if (!archive) {
-        cout << "Can't open archive file " << fileName << endl;
-        return 0;
+        cout << "Can't open archive file " << inFileName << endl;
+
     } else {
-
-        if(writeHeader) {
-            file_header header = buildHeader(fileName);
-
-            //writing header
-            archive.write(header.signature, SIGNATURE_SZ);
-            archive.write(header.name, NAME_SZ);
-            archive.write(header.version, VERSION_SZ);
-            archive.write(header.size, SIZE_SZ);
-            archive.write(header.algorithm, ALGORITHM_SZ);
-            archive.write(header.padding, PADDING_SZ);
-        }
-
-        auto size = archive.tellp();
-
 
         while (file.peek() != EOF) {
             file.read(buff, 1);
@@ -102,14 +87,8 @@ int RLECompress::Compress(const string& fileName, const string& archiveName, boo
         //finally write '\n'
         archive << "\n";
 
-        size = archive.tellp() - size;
-
-
         file.close();
         archive.close();
-        return size;
-
-
     }
 }
 
@@ -208,33 +187,6 @@ void RLECompress::Extract(ifstream& archiveFile, file_header& header){
 
 
 }
-
-
-
-
-file_header RLECompress::buildHeader(const std::string &fileName) {
-    file_header header{};
-    ifstream file;
-
-    file.open(fileName, ios_base::in);
-    if(!file) {
-        cout << "Can't open file " << fileName << endl;
-    }
-    else {
-
-        file.seekg( 0, std::ios::end );
-        int fileSize = (int)(file.tellg());
-
-        memset(&header, 0, sizeof(struct file_header));
-        snprintf(header.signature, SIGNATURE_SZ, "%s", SIGN);
-        snprintf(header.name, NAME_SZ, "%s", fileName.c_str());
-        snprintf(header.version, VERSION_SZ, "%s", VERSION);
-        snprintf(header.size, SIZE_SZ, "%d", fileSize);
-        snprintf(header.algorithm, ALGORITHM_SZ, "%s", "2");
-    }
-    return header;
-}
-
 
 
 void RLECompress::writeToArchive( ofstream& archive, const string& sequenceString){

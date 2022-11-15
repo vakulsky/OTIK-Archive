@@ -12,7 +12,8 @@
 #define NAME_SZ 50
 #define VERSION_SZ 8
 #define SIZE_SZ 12
-#define ALGORITHM_SZ 6
+#define ALGORITHM_SZ 5
+#define ERRORCORR_SZ 1
 #define PADDING_SZ 44
 
 struct file_header {
@@ -21,6 +22,7 @@ struct file_header {
     char version[VERSION_SZ];
     char size[SIZE_SZ];
     char algorithm[ALGORITHM_SZ];
+    char errorcorr[ERRORCORR_SZ];
     char padding[PADDING_SZ];
 
 };

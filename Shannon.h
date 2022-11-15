@@ -5,16 +5,7 @@
 #ifndef OTIK_ARCHIVE_SHANNON_H
 #define OTIK_ARCHIVE_SHANNON_H
 
-#include <iostream>
-#include <string>
-#include <cstring>
-#include <vector>
-#include <fstream>
-#include <cmath>
-#include "fileHeader.h"
-#include <algorithm>
-#include <filesystem>
-#include <sstream>
+#include "HammingCode.h"
 
 using namespace std;
 
@@ -26,9 +17,7 @@ private:
 
     void analyzeUTF8(const string& currentSymbol);
     void shannonCodes();
-    int writeToFile(const string& file, const string& archiveName, file_header& header, bool writeHeader);
-    file_header buildHeader(const string& file);
-
+    void writeToFile(const string& inFileName, const string& outFileName);
 
     static vector<string> divideString(const string& text){
         vector<string> array;
@@ -61,7 +50,7 @@ private:
     }
 
 public:
-    int Compress(const string& file, const string& archiveName, bool writeHeader);
+    void Compress(const string& inFileName, const string& outFileName);
     void Extract(ifstream& archiveFile, file_header& header);
 
 
