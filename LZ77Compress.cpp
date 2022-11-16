@@ -67,6 +67,7 @@ void LZ77Compress::Extract(const string& inFileName, file_header& header){
 
 
     file.open(fileName, ios::out);
+    inFile.open(inFileName);
     if (!file) {
         cout << "Can't read file " << fileName << endl;
 

@@ -189,18 +189,35 @@ void Archiver::Extract(const string& inFileName){
         }
 
         if(strcmp(header.algorithm, "0") == 0) {
+
+            /////
+            cout << "DEBUG: PACK"  <<  endl;
+            /////
+
             string originalFileName = string(header.name);
             CopyToFile(recoveredDataFileName, 0, 0, originalFileName);
         }
-
-        else if(strcmp(header.algorithm, "1") == 0)
-            shannonCompressor.Extract(recoveredDataFileName, header);
-
-        else if(strcmp(header.algorithm, "2") == 0)
-            RLECompressor.Extract(recoveredDataFileName, header);
-
-        else if(strcmp(header.algorithm, "3") == 0)
-            LZ77Compressor.Extract(recoveredDataFileName, header);
+        else
+            if(strcmp(header.algorithm, "1") == 0) {
+                /////
+                cout << "DEBUG: SHANNON"  <<  endl;
+                /////
+                shannonCompressor.Extract(recoveredDataFileName, header);
+            }
+            else
+                if(strcmp(header.algorithm, "2") == 0) {
+                    /////
+                    cout << "DEBUG: RLE"  <<  endl;
+                    /////
+                    RLECompressor.Extract(recoveredDataFileName, header);
+                }
+                else
+                    if(strcmp(header.algorithm, "3") == 0) {
+                        /////
+                        cout << "DEBUG: LZ77"  <<  endl;
+                        /////
+                        LZ77Compressor.Extract(recoveredDataFileName, header);
+                    }
 
 
         RemoveFiles(vector<string>{
