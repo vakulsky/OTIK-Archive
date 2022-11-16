@@ -131,7 +131,7 @@ void RLECompress::Extract(ifstream& archiveFile, file_header& header){
                 count = atoi(&buff[0]) + a;
 
                 /////
-                cout << "DEBUG| EXTR (size): " << count << endl;
+                cout << "DEBUG| EXTR (file_size): " << count << endl;
                 /////
 
                 //read byte
@@ -157,7 +157,7 @@ void RLECompress::Extract(ifstream& archiveFile, file_header& header){
                 count = atoi(&buff[0]) + b;
 
                 /////
-                cout << "DEBUG| EXTR (size): " << count << endl;
+                cout << "DEBUG| EXTR (file_size): " << count << endl;
                 /////
 
 

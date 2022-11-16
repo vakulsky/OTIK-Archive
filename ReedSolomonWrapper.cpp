@@ -12,7 +12,7 @@ void ReedSolomonWrapper::AddProtection(const string& inFileName, const string& o
     const std::size_t gen_poly_index      = 120;
     const std::size_t gen_poly_root_count =   6;
     const std::size_t code_length         = 255;
-    const std::size_t fec_length          =   6;
+    const std::size_t fec_length          = 6;
 
     typedef schifra::reed_solomon::encoder<code_length,fec_length> encoder_t;
     typedef schifra::reed_solomon::file_encoder<code_length,fec_length> file_encoder_t;

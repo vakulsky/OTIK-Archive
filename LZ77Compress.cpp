@@ -238,7 +238,7 @@ void LZ77Compress::encodeLZ77() {
         }
 
         /////
-        cout << "DEBUG: pos:  " << position << " size: " << TEXT_IN.size() << endl << endl;
+        cout << "DEBUG: pos:  " << position << " file_size: " << TEXT_IN.size() << endl << endl;
         /////
     }
 

@@ -54,7 +54,7 @@ namespace schifra
             std::size_t remaining_bytes = schifra::fileio::file_size(input_file_name);
             if (remaining_bytes == 0)
             {
-               std::cout << "reed_solomon::file_encoder() - Error: input file has ZERO size." << std::endl;
+               std::cout << "reed_solomon::file_encoder() - Error: input file has ZERO file_size." << std::endl;
                return;
             }
 

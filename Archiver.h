@@ -37,13 +37,19 @@ private:
     HammingCode hammingCodeProtector;
     ReedSolomonWrapper reedSolomonWrapper;
 
-    file_header BuildHeader(const string& fileName, CompressType compressType, ErrorCorrection errorCorrection);
+    const int protectedHeaderSize = 255 + 6;  // code_length + fec_length from ReedSolomonWrapper functions
+
+    static file_header BuildHeader(const string& fileName,
+                                   CompressType compressType,
+                                   ErrorCorrection errorCorrection,
+                                   int compressedDataSize);
     void IntelligentArchive(const string& inFileName, const string& outFileName);
     static void WriteHeaderToFile(const file_header& header, const string& outFileName);
-    static void CopyToFile(const string& from, const string& to);
+    static void CopyToFile(const string& from, long startPosition, int copySize, const string& to);
     static int GetFileSize(const string& fileName);
-    file_header ReadHeader(const string& fileName);
+    file_header ReadHeader(const string& fileName, long position);
     bool CheckHeader(const file_header& header);
+
 public:
     Archiver(vector<string> &vec, string path) {
         if (vec.size() > 0) files.assign(vec.begin(), vec.end());

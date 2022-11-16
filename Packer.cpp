@@ -49,7 +49,7 @@ void Packer::Unpack(const string& inFileName, const int inFileSize, const string
     else {
 
 
-        for(int i =0 ; i < atoi(header.size); i++) {
+        for(int i =0 ; i < atoi(header.file_size); i++) {
             archiveFile.read(buff, 1);
             outputFile.write(buff, 1);
         }

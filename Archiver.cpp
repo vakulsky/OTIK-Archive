@@ -9,8 +9,6 @@ using namespace std;
 void Archiver::Compress(CompressType compressType, ErrorCorrection dataProtectionType, ErrorCorrection headerProtectionType) {
 
     for(auto file : files){
-        //build header for file
-        file_header header = BuildHeader(file, compressType, dataProtectionType);
 
         //use different name for temp compressed file
         string tempFileName = file.append("_compressed");
@@ -56,6 +54,12 @@ void Archiver::Compress(CompressType compressType, ErrorCorrection dataProtectio
                 break;
         }
 
+        //build header for file
+        file_header header = BuildHeader(file,
+                                         compressType,
+                                         dataProtectionType,
+                                         GetFileSize(toArchiveFileName));
+
         //protect header if needed
         string tempHeaderFileName = "header.header";
         string protectedHeaderFileName = "header_protected.header";
@@ -79,77 +83,97 @@ void Archiver::Compress(CompressType compressType, ErrorCorrection dataProtectio
         }
 
         //write header + filedata to archive file
-        CopyToFile(protectedHeaderFileName, archiveFileName);
-        CopyToFile(toArchiveFileName, archiveFileName);
+        CopyToFile(protectedHeaderFileName, 0, 0, archiveFileName);
+        CopyToFile(toArchiveFileName, 0, 0, archiveFileName);
+
+        //todo remove temp files
     }
 
 
 }
 
 
-void Archiver::Extract(const string& archiveName){
-
+void Archiver::Extract(const string& archiveFileName){
     ifstream archiveFile;
 
-    archiveFile.open(archiveName);
-    if(!archiveFile) {
-        cout << "Can't read file " << archiveName << endl;
-    }
-    else {
-        file_header header{};
+    auto archiveSize = GetFileSize(archiveFileName);
+    long currentPosition = 0;
 
-        archiveFile.seekg(0, ios_base::beg);
+    //read archive to its end
+    while(currentPosition < archiveSize){
+        file_header header = ReadHeader(archiveFileName, currentPosition);
+        currentPosition+=HEADER_SZ;
 
+        //checking header
+        if(!CheckHeader(header)){
+            //something is wrong with header. trying to read protected version of it
+            string protectedHeaderFileName = "protected.header",
+                   recoveredHeaderFileName = "recovered.header";
 
-        while (!archiveFile.eof() && archiveFile.peek() != EOF) {
+            CopyToFile(archiveFileName, currentPosition, protectedHeaderSize, protectedHeaderFileName);
+            reedSolomonWrapper.RemoveProtection(protectedHeaderFileName, recoveredHeaderFileName);
 
-            //read header from archive
-            memset(&header, 0, sizeof(struct file_header));
-            archiveFile.read(header.signature, SIGNATURE_SZ);
-            archiveFile.read(header.name, NAME_SZ);
-            archiveFile.read(header.version, VERSION_SZ);
-            archiveFile.read(header.size, SIZE_SZ);
-            archiveFile.read(header.algorithm, ALGORITHM_SZ);
-            archiveFile.read(header.errorcorr, ERRORCORR_SZ);
-            archiveFile.read(header.padding, PADDING_SZ);   //going through padding without reading
+            file_header retrievedHeader = ReadHeader(recoveredHeaderFileName, 0);
 
-            /////
-            cout << "DEBUG | (sign from file): " << string(header.signature) << endl;
-            cout << "DEBUG | (version from file): " << string(header.version) << endl;
-            cout << "DEBUG | (alg code from file): " << string(header.algorithm) << endl;
-            cout << "DEBUG | (size code from file): " << string(header.size) << endl;
-            /////
+            //todo remove temp files
 
-            if (strcmp(header.signature, SIGN) != 0) {
-                cout << "Error: Signature mismatch!" << endl;
+            if(CheckHeader(retrievedHeader)){
+                //header is good
+                header = retrievedHeader;
+                currentPosition+=protectedHeaderSize;
+            }
+            else{
+                cout << "Cannot recover header. EXITING..." << endl;
                 break;
             }
-
-
-            if (strcmp(header.version, VERSION) != 0) {
-                cout << "Error: Incompatible version!" << endl;
-                break;
-            }
-
-            if (strcmp(header.algorithm, "1") == 0) {
-                shannonCompressor.Extract(archiveFile, header);
-            }
-            else if(strcmp(header.algorithm, "0") == 0)
-                packer.Unpack(archiveFile, header);
-            else if(strcmp(header.algorithm, "2") == 0)
-                RLECompressor.Extract(archiveFile, header);
-            else if(strcmp(header.algorithm, "3") == 0)
-                LZ77Compressor.Extract(archiveFile, header);
-            else {
-                cout << "Error: Invalid algorithm code!" << endl;
-                break;
-            }
-
-
         }
-        archiveFile.close();
-    }
 
+        //if here then header is OK
+
+        string protectedDataFileName = "protected.data",
+               recoveredDataFileName = "recovered.data";
+        if(strcmp(header.errorcorr, "1") == 0){
+
+            //data protected using Hamming Codes
+            CopyToFile(archiveFileName, currentPosition,
+                       atoi(header.data_size),
+                       protectedDataFileName);
+            currentPosition += atoi(header.data_size);
+
+            //recovering data
+            hammingCodeProtector.RemoveProtection(protectedDataFileName, recoveredDataFileName);
+        }
+        else if(strcmp(header.errorcorr, "2") == 0){
+            //data protected using Reed-Solomon Codes
+
+            CopyToFile(archiveFileName, currentPosition,
+                       atoi(header.data_size),
+                       protectedDataFileName);
+            currentPosition += atoi(header.data_size);
+
+            reedSolomonWrapper.RemoveProtection(protectedDataFileName, recoveredDataFileName);
+        }
+        else{
+            //data wasn't protected. Writing to destination file
+            CopyToFile(archiveFileName, currentPosition,
+                       atoi(header.data_size),
+                       string(header.name));
+            currentPosition += atoi(header.data_size);
+        }
+
+
+        if(strcmp(header.algorithm, "1") == 0)
+            shannonCompressor.Extract(archiveFile, header);
+
+        else if(strcmp(header.algorithm, "2") == 0)
+            RLECompressor.Extract(archiveFile, header);
+
+        else if(strcmp(header.algorithm, "3") == 0)
+            LZ77Compressor.Extract(archiveFile, header);
+
+
+        //todo remove temp files
+    }
 }
 
 void Archiver::IntelligentArchive(const string& inFileName, const string& outFileName){
@@ -193,7 +217,10 @@ void Archiver::IntelligentArchive(const string& inFileName, const string& outFil
 }
 
 
-file_header Archiver::BuildHeader(const string& fileName, CompressType compressType, ErrorCorrection errorCorrection){
+file_header Archiver::BuildHeader(const string& fileName,
+                                  CompressType compressType,
+                                  ErrorCorrection errorCorrection,
+                                  int compressedDataSize){
     file_header header{};
     ifstream file;
 
@@ -202,7 +229,7 @@ file_header Archiver::BuildHeader(const string& fileName, CompressType compressT
         cout << "Can't open file " << fileName << endl;
     }
     else {
-        //file size
+        //file file_size
         file.seekg( 0, std::ios::end );
         int fileSize = (int)(file.tellg());
 
@@ -210,9 +237,10 @@ file_header Archiver::BuildHeader(const string& fileName, CompressType compressT
         snprintf(header.signature, SIGNATURE_SZ, "%s", SIGN);
         snprintf(header.name, NAME_SZ, "%s", fileName.c_str());
         snprintf(header.version, VERSION_SZ, "%s", VERSION);
-        snprintf(header.size, SIZE_SZ, "%d", fileSize);
+        snprintf(header.file_size, FILESIZE_SZ, "%d", fileSize);
         snprintf(header.algorithm, ALGORITHM_SZ, "%u", compressType);
         snprintf(header.errorcorr, ERRORCORR_SZ, "%u", errorCorrection);
+        snprintf(header.data_size, DATASIZE_SZ, "%d", compressedDataSize);
     }
     return header;
 
@@ -234,15 +262,16 @@ void Archiver::WriteHeaderToFile(const file_header& header, const string& outFil
         outFile.write(header.signature, SIGNATURE_SZ);
         outFile.write(header.name, NAME_SZ);
         outFile.write(header.version, VERSION_SZ);
-        outFile.write(header.size, SIZE_SZ);
+        outFile.write(header.file_size, FILESIZE_SZ);
         outFile.write(header.algorithm, ALGORITHM_SZ);
         outFile.write(header.errorcorr, ERRORCORR_SZ);
+        outFile.write(header.data_size, DATASIZE_SZ);
         outFile.write(header.padding, PADDING_SZ);
     }
     outFile.close();
 }
 
-void Archiver::CopyToFile(const string& from, const string& to){
+void Archiver::CopyToFile(const string& from, long startPosition, int copySize, const string& to){
 
     ofstream outFile;
     ifstream inFile;
@@ -254,11 +283,22 @@ void Archiver::CopyToFile(const string& from, const string& to){
     }
     else{
         inFile.open(from, ios::binary);
-        //writing data
-        std::copy(
-                std::istreambuf_iterator<char>(inFile),
-                std::istreambuf_iterator<char>( ),
-                std::ostreambuf_iterator<char>(outFile));
+        inFile.seekg(startPosition, ios::beg);
+        if(copySize > 0){
+            //copy data of specified length
+            std::copy_n(std::istreambuf_iterator<char>(inFile),
+                        copySize,
+                        std::ostreambuf_iterator<char>(outFile));
+        }
+        else{
+            //copy whole data
+            std::copy(
+                    std::istreambuf_iterator<char>(inFile),
+                    std::istreambuf_iterator<char>( ),
+                    std::ostreambuf_iterator<char>(outFile));
+        }
+
+
         inFile.close();
     }
     outFile.close();
@@ -273,7 +313,7 @@ int Archiver::GetFileSize(const string& fileName) {
         cout << "Can't open file " << fileName << endl;
         return 0;
     } else {
-        //file size
+        //file file_size
         file.seekg(0, std::ios::end);
         int fileSize = (int) (file.tellg());
         return fileSize;
@@ -281,12 +321,67 @@ int Archiver::GetFileSize(const string& fileName) {
 
 }
 
-file_header Archiver::ReadHeader(const string& fileName){
-    //todo
+file_header Archiver::ReadHeader(const string& fileName, long position) {
+    ifstream file;
+    file_header header{};
+
+    file.open(fileName);
+    if (!file) {
+        cout << "Can't read file " << fileName << endl;
+    } else {
+        file.seekg(position, ios_base::beg);
+
+
+        while (!file.eof() && file.peek() != EOF) {
+
+            //read header from archive
+            memset(&header, 0, sizeof(struct file_header));
+            file.read(header.signature, SIGNATURE_SZ);
+            file.read(header.name, NAME_SZ);
+            file.read(header.version, VERSION_SZ);
+            file.read(header.file_size, FILESIZE_SZ);
+            file.read(header.algorithm, ALGORITHM_SZ);
+            file.read(header.errorcorr, ERRORCORR_SZ);
+            file.read(header.data_size, DATASIZE_SZ);
+            file.read(header.padding, PADDING_SZ);   //going through padding
+
+        }
+    }
 }
 
 
 bool Archiver::CheckHeader(const file_header& header){
-    //todo
+    if (strcmp(header.signature, SIGN) != 0) {
+        cout << "Error: Signature mismatch!" << endl;
+        return false;
+    }
+
+    if (strcmp(header.version, VERSION) != 0) {
+        cout << "Error: Incompatible version!" << endl;
+        return false;
+    }
+
+    if (strcmp(header.algorithm, "0") != 0 ||
+        strcmp(header.algorithm, "1") != 0 ||
+        strcmp(header.algorithm, "2") != 0 ||
+        strcmp(header.algorithm, "3") != 0 ||
+        strcmp(header.algorithm, "4") != 0) {
+        cout << "Error: Wrong algorithm code!" << endl;
+        return false;
+    }
+
+    if (strcmp(header.errorcorr, "0") != 0 ||
+        strcmp(header.errorcorr, "1") != 0 ||
+        strcmp(header.errorcorr, "2") != 0) {
+        cout << "Error: Wrong error correction algorithm code!" << endl;
+        return false;
+    }
+
+    return true;
+}
+
+
+void ReadArchivePartToFile(const string& inFileName, const string& outFileName, long& position){
+
 }
 

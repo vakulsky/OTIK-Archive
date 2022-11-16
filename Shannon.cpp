@@ -112,7 +112,7 @@ void Shannon::writeToFile(const string& inFileName, const string& outFileName) {
     } else {
 
 
-        //writing table size (symbols in table)
+        //writing table file_size (symbols in table)
         archive << codes.size() << endl;
 
         //writing table

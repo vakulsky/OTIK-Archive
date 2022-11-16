@@ -144,7 +144,7 @@ namespace schifra
          {
             /*
                It is assumed that element is an array of field elements
-               with size/element count of degree + 1.
+               with file_size/element count of degree + 1.
             */
             for (unsigned int i = 0; i <= degree; ++i)
             {
@@ -810,7 +810,7 @@ namespace schifra
          if (polynomial.deg() >= 0)
          {
             /*
-            for (unsigned int i = 0; i < polynomial.poly_.size(); ++i)
+            for (unsigned int i = 0; i < polynomial.poly_.file_size(); ++i)
             {
                os << polynomial.poly[i].index()
                   << ((i != (polynomial.deg())) ? " " : "");

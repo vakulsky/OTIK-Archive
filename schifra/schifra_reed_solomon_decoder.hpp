@@ -52,7 +52,7 @@ namespace schifra
          {
             if (decoder_valid_)
             {
-               //Note: code_length and field size can be used interchangeably
+               //Note: code_length and field file_size can be used interchangeably
                create_lookup_tables();
             }
          };
@@ -396,7 +396,7 @@ namespace schifra
       template <std::size_t code_length,
                 std::size_t fec_length,
                 std::size_t data_length    = code_length - fec_length,
-                std::size_t natural_length = 255,  // Needs to be in-sync with field size
+                std::size_t natural_length = 255,  // Needs to be in-sync with field file_size
                 std::size_t padding_length = natural_length - data_length - fec_length>
       class shortened_decoder
       {

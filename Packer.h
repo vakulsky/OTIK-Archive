@@ -14,11 +14,11 @@ private:
 public:
     Packer() {};
 
-    //pack single inFileName to archive. Return: size in archive
+    //pack single inFileName to archive. Return: file_size in archive
     void Pack(const string& inFileName, const string& outFileName);
 
     //get single file from archive
-    void Unpack(ifstream& archiveFile, file_header& header);
+    void Unpack(const string& inFileName, file_header& header);
 
     static string getFileName(const string& filename) {
         return filename.substr(filename.find_last_of("\\") + 1, filename.size());
