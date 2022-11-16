@@ -10,7 +10,7 @@ void Archiver::Compress(CompressType compressType, ErrorCorrection dataProtectio
 
     for(auto file : files){
         //build header for file
-        file_header header = buildHeader(file, compressType, dataProtectionType);
+        file_header header = BuildHeader(file, compressType, dataProtectionType);
 
         //use different name for temp compressed file
         string tempFileName = file.append("_compressed");
@@ -35,7 +35,7 @@ void Archiver::Compress(CompressType compressType, ErrorCorrection dataProtectio
                 break;
 
             case INTELLIGENT:
-                intelligentArchive(file, tempFileName);
+                IntelligentArchive(file, tempFileName);
 
         }
 
@@ -48,7 +48,7 @@ void Archiver::Compress(CompressType compressType, ErrorCorrection dataProtectio
 
             case REEDSOL:
                 toArchiveFileName = file.append("_protected");
-                //todo add external lib with reed-solomon algo(filein, fileout)
+                reedSolomonWrapper.AddProtection(tempFileName, toArchiveFileName);
                 break;
 
             case NONE:
@@ -63,17 +63,18 @@ void Archiver::Compress(CompressType compressType, ErrorCorrection dataProtectio
         //write header to temp file to protect
         WriteHeaderToFile(header, tempHeaderFileName);
         switch (headerProtectionType) {
-            case HAMMING:
-                hammingCodeProtector.AddProtection(tempHeaderFileName, protectedHeaderFileName);
-                break;
-
             case REEDSOL:
-                //todo add external lib with reed-solomon algo(filein, fileout)
+                reedSolomonWrapper.AddProtection(tempHeaderFileName, protectedHeaderFileName);
                 break;
 
             case NONE:
                 //just copy to another file
                 protectedHeaderFileName = tempHeaderFileName;
+                break;
+            case HAMMING:
+                //NOT IMPLEMENTED YET
+                protectedHeaderFileName = tempHeaderFileName;
+                cout << "WARNING: Header protection using Hamming codes is NOT IMPLEMENTED YET. Header won't be protected!" << endl;
                 break;
         }
 
@@ -151,23 +152,23 @@ void Archiver::Extract(const string& archiveName){
 
 }
 
-void Archiver::intelligentArchive(const string& inFileName, const string& outFileName){
+void Archiver::IntelligentArchive(const string& inFileName, const string& outFileName){
    int packSize, shannonSize, RLESize, LZ77Size;
 
     packer.Pack(inFileName, outFileName + "_TMP");
-    packSize = getFileSize(outFileName + "_TMP");
+    packSize = GetFileSize(outFileName + "_TMP");
     remove((outFileName + "_TMP").c_str());
 
     shannonCompressor.Compress(inFileName, outFileName + "_TMP");
-    shannonSize = getFileSize(outFileName + "_TMP");
+    shannonSize = GetFileSize(outFileName + "_TMP");
     remove((outFileName + "_TMP").c_str());
 
     RLECompressor.Compress(inFileName, outFileName + "_TMP");
-    RLESize = getFileSize(outFileName + "_TMP");
+    RLESize = GetFileSize(outFileName + "_TMP");
     remove((outFileName + "_TMP").c_str());
 
     LZ77Compressor.Compress(inFileName, outFileName + "_TMP");
-    LZ77Size = getFileSize(outFileName + "_TMP");
+    LZ77Size = GetFileSize(outFileName + "_TMP");
     remove((outFileName + "_TMP").c_str());
 
 
@@ -192,7 +193,7 @@ void Archiver::intelligentArchive(const string& inFileName, const string& outFil
 }
 
 
-file_header Archiver::buildHeader(const string& fileName, CompressType compressType, ErrorCorrection errorCorrection){
+file_header Archiver::BuildHeader(const string& fileName, CompressType compressType, ErrorCorrection errorCorrection){
     file_header header{};
     ifstream file;
 
@@ -264,7 +265,7 @@ void Archiver::CopyToFile(const string& from, const string& to){
 }
 
 
-int Archiver::getFileSize(const string& fileName) {
+int Archiver::GetFileSize(const string& fileName) {
     ifstream file;
 
     file.open(fileName, ios::in);
@@ -278,6 +279,14 @@ int Archiver::getFileSize(const string& fileName) {
         return fileSize;
     }
 
+}
 
+file_header Archiver::ReadHeader(const string& fileName){
+    //todo
+}
+
+
+bool Archiver::CheckHeader(const file_header& header){
+    //todo
 }
 

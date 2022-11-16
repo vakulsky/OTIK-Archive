@@ -5,16 +5,7 @@
 #ifndef OTIK_ARCHIVE_HAMMINGCODE_H
 #define OTIK_ARCHIVE_HAMMINGCODE_H
 
-#include <iostream>
-#include <string>
-#include <cstring>
-#include <vector>
-#include <fstream>
-#include <cmath>
-#include "fileHeader.h"
-#include <algorithm>
-#include <filesystem>
-#include <sstream>
+#include "ReedSolomonWrapper.h"
 
 using namespace std;
 class HammingCode {
