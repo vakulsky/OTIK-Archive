@@ -93,26 +93,26 @@ void RLECompress::Compress(const string& inFileName, const string& outFileName) 
 }
 
 
-void RLECompress::Extract(ifstream& archiveFile, file_header& header){
+void RLECompress::Extract(const string& inFileName, file_header& header){
 
+    ifstream inFile;
     ofstream file;
     char buff[1];
     string fileName = header.name;
     char sequenceAccum[Lmax+2];
     int count;
 
-
-
+    inFile.open(inFileName);
     file.open(fileName, ios::out);
     if (!file) {
         cout << "Can't read file " << fileName << endl;
 
-    } else if (!archiveFile) {
+    } else if (!inFile) {
         cout << "Can't open archive file" << endl;
 
     } else {
 
-        archiveFile.read(buff, 1);
+        inFile.read(buff, 1);
 
         /////
         cout << "DEBUG| EXTR (buff before while): " << buff[0] << endl;
@@ -127,7 +127,7 @@ void RLECompress::Extract(ifstream& archiveFile, file_header& header){
                 /////
 
                 //read count
-                archiveFile.read(buff, 1);
+                inFile.read(buff, 1);
                 count = atoi(&buff[0]) + a;
 
                 /////
@@ -135,7 +135,7 @@ void RLECompress::Extract(ifstream& archiveFile, file_header& header){
                 /////
 
                 //read byte
-                archiveFile.read(buff, 1);
+                inFile.read(buff, 1);
 
                 /////
                 cout << "DEBUG| EXTR (sym): " << buff[0] << endl;
@@ -153,7 +153,7 @@ void RLECompress::Extract(ifstream& archiveFile, file_header& header){
                 /////
 
                 //read length
-                archiveFile.read(buff, 1);
+                inFile.read(buff, 1);
                 count = atoi(&buff[0]) + b;
 
                 /////
@@ -164,7 +164,7 @@ void RLECompress::Extract(ifstream& archiveFile, file_header& header){
 
                 //read sequence
                 memset(sequenceAccum, 0, sizeof sequenceAccum);
-                archiveFile.read(sequenceAccum, count);
+                inFile.read(sequenceAccum, count);
 
                 /////
                 cout << "DEBUG| EXTR (seq): " << sequenceAccum << endl;
@@ -174,12 +174,12 @@ void RLECompress::Extract(ifstream& archiveFile, file_header& header){
 
             }
 
-            archiveFile.read(buff, 1);
+            inFile.read(buff, 1);
         }
 
     }
 
-
+        inFile.close();
         file.close();
 
 

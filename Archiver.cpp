@@ -11,46 +11,44 @@ void Archiver::Compress(CompressType compressType, ErrorCorrection dataProtectio
     for(auto file : files){
 
         //use different name for temp compressed file
-        string tempFileName = file.append("_compressed");
-        string toArchiveFileName;
+        string compressedDataFileName = "compressed.data",
+               protectedDataFileName = "protected.data";
 
         //compress file using preferred algorithm
         switch (compressType) {
             case PACK:
-                packer.Pack(file, tempFileName);
+                CopyToFile(file, 0, 0, compressedDataFileName);
                 break;
 
             case SHANNON:
-                shannonCompressor.Compress(file, tempFileName);
+                shannonCompressor.Compress(file, compressedDataFileName);
                 break;
 
             case RLE:
-                RLECompressor.Compress(file, tempFileName);
+                RLECompressor.Compress(file, compressedDataFileName);
                 break;
 
             case LZ77:
-                LZ77Compressor.Compress(file, tempFileName);
+                LZ77Compressor.Compress(file, compressedDataFileName);
                 break;
 
             case INTELLIGENT:
-                IntelligentArchive(file, tempFileName);
+                compressType = IntelligentArchive(file, compressedDataFileName);
 
         }
 
         //protect data if needed
         switch (dataProtectionType) {
             case HAMMING:
-                toArchiveFileName = file.append("_protected");
-                hammingCodeProtector.AddProtection(tempFileName, toArchiveFileName);
+                hammingCodeProtector.AddProtection(compressedDataFileName, protectedDataFileName);
                 break;
 
             case REEDSOL:
-                toArchiveFileName = file.append("_protected");
-                reedSolomonWrapper.AddProtection(tempFileName, toArchiveFileName);
+                reedSolomonWrapper.AddProtection(compressedDataFileName, protectedDataFileName);
                 break;
 
             case NONE:
-                toArchiveFileName = tempFileName;
+                protectedDataFileName = compressedDataFileName;
                 break;
         }
 
@@ -58,50 +56,55 @@ void Archiver::Compress(CompressType compressType, ErrorCorrection dataProtectio
         file_header header = BuildHeader(file,
                                          compressType,
                                          dataProtectionType,
-                                         GetFileSize(toArchiveFileName));
+                                         GetFileSize(protectedDataFileName));
 
         //protect header if needed
-        string tempHeaderFileName = "header.header";
-        string protectedHeaderFileName = "header_protected.header";
+        string headerFileName = "raw.header",
+               protectedHeaderFileName = "protected.header";
 
         //write header to temp file to protect
-        WriteHeaderToFile(header, tempHeaderFileName);
+        WriteHeaderToFile(header, headerFileName);
         switch (headerProtectionType) {
             case REEDSOL:
-                reedSolomonWrapper.AddProtection(tempHeaderFileName, protectedHeaderFileName);
+                reedSolomonWrapper.AddProtection(headerFileName, protectedHeaderFileName);
                 break;
 
             case NONE:
                 //just copy to another file
-                protectedHeaderFileName = tempHeaderFileName;
+                protectedHeaderFileName = headerFileName;
                 break;
             case HAMMING:
                 //NOT IMPLEMENTED YET
-                protectedHeaderFileName = tempHeaderFileName;
+                protectedHeaderFileName = headerFileName;
                 cout << "WARNING: Header protection using Hamming codes is NOT IMPLEMENTED YET. Header won't be protected!" << endl;
                 break;
         }
 
         //write header + filedata to archive file
         CopyToFile(protectedHeaderFileName, 0, 0, archiveFileName);
-        CopyToFile(toArchiveFileName, 0, 0, archiveFileName);
+        CopyToFile(protectedDataFileName, 0, 0, archiveFileName);
 
-        //todo remove temp files
+        RemoveFiles(vector<string>{
+                protectedDataFileName,
+                compressedDataFileName,
+                headerFileName,
+                protectedHeaderFileName
+        });
     }
 
 
 }
 
 
-void Archiver::Extract(const string& archiveFileName){
+void Archiver::Extract(const string& inFileName){
     ifstream archiveFile;
 
-    auto archiveSize = GetFileSize(archiveFileName);
+    auto archiveSize = GetFileSize(inFileName);
     long currentPosition = 0;
 
     //read archive to its end
     while(currentPosition < archiveSize){
-        file_header header = ReadHeader(archiveFileName, currentPosition);
+        file_header header = ReadHeader(inFileName, currentPosition);
         currentPosition+=HEADER_SZ;
 
         //checking header
@@ -110,12 +113,19 @@ void Archiver::Extract(const string& archiveFileName){
             string protectedHeaderFileName = "protected.header",
                    recoveredHeaderFileName = "recovered.header";
 
-            CopyToFile(archiveFileName, currentPosition, protectedHeaderSize, protectedHeaderFileName);
+            /////
+            cout << "DEBUG | header was wrong" << endl;
+            /////
+
+            CopyToFile(inFileName, currentPosition, protectedHeaderSize, protectedHeaderFileName);
             reedSolomonWrapper.RemoveProtection(protectedHeaderFileName, recoveredHeaderFileName);
 
             file_header retrievedHeader = ReadHeader(recoveredHeaderFileName, 0);
 
-            //todo remove temp files
+            RemoveFiles(vector<string>{
+                    protectedHeaderFileName,
+                    recoveredHeaderFileName
+            });
 
             if(CheckHeader(retrievedHeader)){
                 //header is good
@@ -130,12 +140,20 @@ void Archiver::Extract(const string& archiveFileName){
 
         //if here then header is OK
 
+        /////
+        cout << "DEBUG | header OK" << endl;
+        /////
+
         string protectedDataFileName = "protected.data",
                recoveredDataFileName = "recovered.data";
         if(strcmp(header.errorcorr, "1") == 0){
 
+            /////
+            cout << "DEBUG | file was protected using hamming" << endl;
+            /////
+
             //data protected using Hamming Codes
-            CopyToFile(archiveFileName, currentPosition,
+            CopyToFile(inFileName, currentPosition,
                        atoi(header.data_size),
                        protectedDataFileName);
             currentPosition += atoi(header.data_size);
@@ -146,7 +164,11 @@ void Archiver::Extract(const string& archiveFileName){
         else if(strcmp(header.errorcorr, "2") == 0){
             //data protected using Reed-Solomon Codes
 
-            CopyToFile(archiveFileName, currentPosition,
+            /////
+            cout << "DEBUG | file was protected using reed-solomon" << endl;
+            /////
+
+            CopyToFile(inFileName, currentPosition,
                        atoi(header.data_size),
                        protectedDataFileName);
             currentPosition += atoi(header.data_size);
@@ -155,33 +177,43 @@ void Archiver::Extract(const string& archiveFileName){
         }
         else{
             //data wasn't protected. Writing to destination file
-            CopyToFile(archiveFileName, currentPosition,
+
+            /////
+            cout << "DEBUG | file wasn't protected" << endl;
+            /////
+
+            CopyToFile(inFileName, currentPosition,
                        atoi(header.data_size),
-                       string(header.name));
+                       recoveredDataFileName);
             currentPosition += atoi(header.data_size);
         }
 
+        if(strcmp(header.algorithm, "0") == 0) {
+            string originalFileName = string(header.name);
+            CopyToFile(recoveredDataFileName, 0, 0, originalFileName);
+        }
 
-        if(strcmp(header.algorithm, "1") == 0)
-            shannonCompressor.Extract(archiveFile, header);
+        else if(strcmp(header.algorithm, "1") == 0)
+            shannonCompressor.Extract(recoveredDataFileName, header);
 
         else if(strcmp(header.algorithm, "2") == 0)
-            RLECompressor.Extract(archiveFile, header);
+            RLECompressor.Extract(recoveredDataFileName, header);
 
         else if(strcmp(header.algorithm, "3") == 0)
-            LZ77Compressor.Extract(archiveFile, header);
+            LZ77Compressor.Extract(recoveredDataFileName, header);
 
 
-        //todo remove temp files
+        RemoveFiles(vector<string>{
+            protectedDataFileName,
+            recoveredDataFileName
+        });
     }
 }
 
-void Archiver::IntelligentArchive(const string& inFileName, const string& outFileName){
+CompressType Archiver::IntelligentArchive(const string& inFileName, const string& outFileName){
    int packSize, shannonSize, RLESize, LZ77Size;
 
-    packer.Pack(inFileName, outFileName + "_TMP");
-    packSize = GetFileSize(outFileName + "_TMP");
-    remove((outFileName + "_TMP").c_str());
+    packSize = GetFileSize(inFileName);
 
     shannonCompressor.Compress(inFileName, outFileName + "_TMP");
     shannonSize = GetFileSize(outFileName + "_TMP");
@@ -196,23 +228,23 @@ void Archiver::IntelligentArchive(const string& inFileName, const string& outFil
     remove((outFileName + "_TMP").c_str());
 
 
-
-    if( packSize <= shannonSize &&  packSize <= RLESize  &&  packSize <= LZ77Size){
-        packer.Pack(inFileName, outFileName);
-    }
-
     if( shannonSize <= RLESize &&  shannonSize <= packSize &&  shannonSize <= LZ77Size){
         shannonCompressor.Compress(inFileName, outFileName);
+        return SHANNON;
     }
 
     if( RLESize <= shannonSize &&  RLESize <= packSize &&  RLESize <= LZ77Size){
         RLECompressor.Compress(inFileName, outFileName);
+        return RLE;
     }
 
     if( LZ77Size <= shannonSize &&  LZ77Size <= packSize &&  LZ77Size <= RLESize){
         LZ77Compressor.Compress(inFileName, outFileName);
+        return LZ77;
     }
 
+    CopyToFile(inFileName, 0, 0, outFileName);
+    return PACK;
 
 }
 
@@ -238,9 +270,9 @@ file_header Archiver::BuildHeader(const string& fileName,
         snprintf(header.name, NAME_SZ, "%s", fileName.c_str());
         snprintf(header.version, VERSION_SZ, "%s", VERSION);
         snprintf(header.file_size, FILESIZE_SZ, "%d", fileSize);
+        snprintf(header.data_size, DATASIZE_SZ, "%d", compressedDataSize);
         snprintf(header.algorithm, ALGORITHM_SZ, "%u", compressType);
         snprintf(header.errorcorr, ERRORCORR_SZ, "%u", errorCorrection);
-        snprintf(header.data_size, DATASIZE_SZ, "%d", compressedDataSize);
     }
     return header;
 
@@ -254,7 +286,7 @@ void Archiver::WriteHeaderToFile(const file_header& header, const string& outFil
     outFile.open(outFileName, ios::app | ios::binary);
 
     if(!outFile){
-        cout << "Error opening outFile!" << endl;
+        cout << "WriteHeaderToFile | Error opening outFile!" << endl;
     }
     else{
 
@@ -263,9 +295,9 @@ void Archiver::WriteHeaderToFile(const file_header& header, const string& outFil
         outFile.write(header.name, NAME_SZ);
         outFile.write(header.version, VERSION_SZ);
         outFile.write(header.file_size, FILESIZE_SZ);
+        outFile.write(header.data_size, DATASIZE_SZ);
         outFile.write(header.algorithm, ALGORITHM_SZ);
         outFile.write(header.errorcorr, ERRORCORR_SZ);
-        outFile.write(header.data_size, DATASIZE_SZ);
         outFile.write(header.padding, PADDING_SZ);
     }
     outFile.close();
@@ -279,7 +311,7 @@ void Archiver::CopyToFile(const string& from, long startPosition, int copySize, 
     outFile.open(to, ios::app | ios::binary);
 
     if(!outFile){
-        cout << "Error opening outFile!" << endl;
+        cout << "CopyToFile | Error opening outFile!" << endl;
     }
     else{
         inFile.open(from, ios::binary);
@@ -328,25 +360,33 @@ file_header Archiver::ReadHeader(const string& fileName, long position) {
     file.open(fileName);
     if (!file) {
         cout << "Can't read file " << fileName << endl;
+        throw invalid_argument("File opening error");
     } else {
         file.seekg(position, ios_base::beg);
 
+        //read header from archive
+        memset(&header, 0, sizeof(struct file_header));
+        file.read(header.signature, SIGNATURE_SZ);
+        file.read(header.name, NAME_SZ);
+        file.read(header.version, VERSION_SZ);
+        file.read(header.file_size, FILESIZE_SZ);
+        file.read(header.data_size, DATASIZE_SZ);
+        file.read(header.algorithm, ALGORITHM_SZ);
+        file.read(header.errorcorr, ERRORCORR_SZ);
+        file.read(header.padding, PADDING_SZ);   //going through padding
 
-        while (!file.eof() && file.peek() != EOF) {
-
-            //read header from archive
-            memset(&header, 0, sizeof(struct file_header));
-            file.read(header.signature, SIGNATURE_SZ);
-            file.read(header.name, NAME_SZ);
-            file.read(header.version, VERSION_SZ);
-            file.read(header.file_size, FILESIZE_SZ);
-            file.read(header.algorithm, ALGORITHM_SZ);
-            file.read(header.errorcorr, ERRORCORR_SZ);
-            file.read(header.data_size, DATASIZE_SZ);
-            file.read(header.padding, PADDING_SZ);   //going through padding
-
-        }
+        /////
+        cout << "DEBUG | (sign from file): " << string(header.signature) << endl;
+        cout << "DEBUG | (name from file): " << string(header.name) << endl;
+        cout << "DEBUG | (version from file): " << string(header.version) << endl;
+        cout << "DEBUG | (file_size from file): " << string(header.file_size) << endl;
+        cout << "DEBUG | (data_size from file): " << string(header.data_size) << endl;
+        cout << "DEBUG | (alg code from file): " << string(header.algorithm) << endl;
+        cout << "DEBUG | (error corr code from file): " << string(header.errorcorr) << endl;
+        /////
     }
+
+    return header;
 }
 
 
@@ -361,17 +401,17 @@ bool Archiver::CheckHeader(const file_header& header){
         return false;
     }
 
-    if (strcmp(header.algorithm, "0") != 0 ||
-        strcmp(header.algorithm, "1") != 0 ||
-        strcmp(header.algorithm, "2") != 0 ||
-        strcmp(header.algorithm, "3") != 0 ||
-        strcmp(header.algorithm, "4") != 0) {
+
+    if (strcmp(header.algorithm, "0") != 0 &&
+        strcmp(header.algorithm, "1") != 0 &&
+        strcmp(header.algorithm, "2") != 0 &&
+        strcmp(header.algorithm, "3") != 0) {
         cout << "Error: Wrong algorithm code!" << endl;
         return false;
     }
 
-    if (strcmp(header.errorcorr, "0") != 0 ||
-        strcmp(header.errorcorr, "1") != 0 ||
+    if (strcmp(header.errorcorr, "0") != 0 &&
+        strcmp(header.errorcorr, "1") != 0 &&
         strcmp(header.errorcorr, "2") != 0) {
         cout << "Error: Wrong error correction algorithm code!" << endl;
         return false;
@@ -381,7 +421,18 @@ bool Archiver::CheckHeader(const file_header& header){
 }
 
 
-void ReadArchivePartToFile(const string& inFileName, const string& outFileName, long& position){
+int Archiver::RemoveFiles(const vector<string>& files){
+    int count = 0;
+    for(auto file : files){
+        try{
+            remove(file.c_str());
+        }
+        catch(...){
 
+        }
+        count++;
+    }
+
+    return count;
 }
 

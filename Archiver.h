@@ -14,9 +14,9 @@ using namespace std;
 enum CompressType{
     PACK,
     SHANNON,
-    INTELLIGENT,
     RLE,
-    LZ77
+    LZ77,
+    INTELLIGENT
 };
 
 enum ErrorCorrection{
@@ -30,7 +30,6 @@ class Archiver {
 private:
     vector<string> files; //headers to be written before every file in archive
     string archiveFileName;   // archive file path
-    Packer packer;
     Shannon shannonCompressor;
     RLECompress RLECompressor;
     LZ77Compress LZ77Compressor;
@@ -43,12 +42,13 @@ private:
                                    CompressType compressType,
                                    ErrorCorrection errorCorrection,
                                    int compressedDataSize);
-    void IntelligentArchive(const string& inFileName, const string& outFileName);
+    CompressType IntelligentArchive(const string& inFileName, const string& outFileName);
     static void WriteHeaderToFile(const file_header& header, const string& outFileName);
     static void CopyToFile(const string& from, long startPosition, int copySize, const string& to);
     static int GetFileSize(const string& fileName);
     file_header ReadHeader(const string& fileName, long position);
     bool CheckHeader(const file_header& header);
+    int RemoveFiles(const vector<string>& files);
 
 public:
     Archiver(vector<string> &vec, string path) {
@@ -57,15 +57,7 @@ public:
     }
 
     void Compress(CompressType, ErrorCorrection dataProtectionType, ErrorCorrection headerProtectionType);
-    void Extract(const string& archive_file);
-
-
-
-
-
-    static string get_file_name(string filename) {
-        return filename.substr(filename.find_last_of("\\") + 1, filename.size());
-    }
+    void Extract(const string& inFileName);
 
 };
 

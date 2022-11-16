@@ -146,7 +146,8 @@ void Shannon::writeToFile(const string& inFileName, const string& outFileName) {
     }
 }
 
-void Shannon::Extract(ifstream & archiveFile, file_header &header) {
+void Shannon::Extract(const string& inFileName, file_header &header) {
+    ifstream inFile;
 
     string symbolsInTable,
                     accum,
@@ -154,14 +155,15 @@ void Shannon::Extract(ifstream & archiveFile, file_header &header) {
     char byte[1];
 
     ofstream extractedFile;
+    inFile.open(inFileName);
     extractedFile.open(header.name);
 
-    getline(archiveFile, symbolsInTable);
+    getline(inFile, symbolsInTable);
 
     codes.clear();
     for(int i = 0; i < stoi(symbolsInTable); i++){
         buff.clear();
-       getline(archiveFile, buff);
+       getline(inFile, buff);
         parseCode(buff);
     }
 
@@ -173,7 +175,7 @@ void Shannon::Extract(ifstream & archiveFile, file_header &header) {
     /////
 
 
-    archiveFile.read(byte, 1);
+    inFile.read(byte, 1);
     while (byte[0] != '\n') {
         accum += byte[0];
 
@@ -189,9 +191,10 @@ void Shannon::Extract(ifstream & archiveFile, file_header &header) {
             }
         }
 
-        archiveFile.read(byte, 1);
+        inFile.read(byte, 1);
 
     }
+    inFile.close();
     extractedFile.close();
 
 }

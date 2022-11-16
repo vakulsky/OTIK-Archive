@@ -5,7 +5,7 @@
 #ifndef OTIK_ARCHIVE_RLECOMPRESS_H
 #define OTIK_ARCHIVE_RLECOMPRESS_H
 
-#include "Packer.h"
+#include "Shannon.h"
 
 
 class RLECompress {
@@ -26,7 +26,7 @@ public:
     }
 
     void Compress(const string& inFileName, const string& outFileName);
-    void Extract(ifstream& archiveFile, file_header& header);
+    void Extract(const string& inFileName, file_header& header);
 
 
 };

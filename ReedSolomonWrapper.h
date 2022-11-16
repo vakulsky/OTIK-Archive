@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <sstream>
+#include <stdexcept>
 
 using namespace std;
 class ReedSolomonWrapper {

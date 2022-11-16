@@ -57,8 +57,9 @@ void LZ77Compress::Compress(const string& inFileName, const string& outFileName)
 
 
 
-void LZ77Compress::Extract(ifstream& archiveFile, file_header& header){
+void LZ77Compress::Extract(const string& inFileName, file_header& header){
 
+    ifstream inFile;
     ofstream file;
     unsigned int shift, size;
     string str;
@@ -69,7 +70,7 @@ void LZ77Compress::Extract(ifstream& archiveFile, file_header& header){
     if (!file) {
         cout << "Can't read file " << fileName << endl;
 
-    } else if (!archiveFile) {
+    } else if (!inFile) {
         cout << "Can't open archive file" << endl;
 
     } else {
@@ -77,8 +78,8 @@ void LZ77Compress::Extract(ifstream& archiveFile, file_header& header){
         TEXT_IN = "";
         TEXT_OUT = "";
 
-        std::getline( archiveFile, TEXT_IN);
-        std::getline( archiveFile, TEXT_IN );
+        std::getline( inFile, TEXT_IN);
+        std::getline( inFile, TEXT_IN );
 
 
 

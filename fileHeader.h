@@ -13,9 +13,9 @@
 #define VERSION_SZ 8
 #define FILESIZE_SZ 12
 #define ALGORITHM_SZ 5
-#define ERRORCORR_SZ 1
+#define ERRORCORR_SZ 5
 #define DATASIZE_SZ 10
-#define PADDING_SZ 29
+#define PADDING_SZ 30
 
 struct file_header {
     char signature[SIGNATURE_SZ];

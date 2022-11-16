@@ -26,18 +26,18 @@ int main(int argv, char* argc[])
         CompressType compressType;
 
         for(int i=1;i<argv;i++)
-        { //filesFlag=pathFlag=dataProtectionFlag=headerProtectionFlag=unpackFlag=compressTypeFlag
-            if(strcmp(argc[i],"-pack")==0) { compressTypeFlag=true; filesFlag=pathFlag=dataProtectionFlag=unpackFlag=false; continue;}
-            if(strcmp(argc[i],"-protectData")==0) { dataProtectionFlag=true; filesFlag=pathFlag=unpackFlag=compressTypeFlag=false; continue;}
+        {
+            if(strcmp(argc[i],"-pack")==0) { compressTypeFlag=true; filesFlag=pathFlag=dataProtectionFlag=false; continue;}
+            if(strcmp(argc[i],"-protectData")==0) { dataProtectionFlag=true; filesFlag=pathFlag=compressTypeFlag=false; continue;}
             if(strcmp(argc[i],"-protectHeader")==0) { headerProtectionFlag=true; continue;}
             if(strcmp(argc[i],"-unpack")==0) { unpackFlag = true; continue;}
-            if(strcmp(argc[i],"-path")==0) { pathFlag=true; filesFlag=dataProtectionFlag=unpackFlag=compressTypeFlag=false; continue; }
-            if(strcmp(argc[i],"-files")==0) { filesFlag=true; pathFlag=dataProtectionFlag=unpackFlag=compressTypeFlag=false; continue; }
+            if(strcmp(argc[i],"-path")==0) { pathFlag=true; filesFlag=dataProtectionFlag=compressTypeFlag=false; continue; }
+            if(strcmp(argc[i],"-files")==0) { filesFlag=true; pathFlag=dataProtectionFlag=compressTypeFlag=false; continue; }
 
             if(pathFlag) {path.assign(argc[i]); }
             if(filesFlag) files.emplace_back(argc[i]);
             if(compressTypeFlag){
-                if(strcmp(argc[i],"norman")==0) compressType = PACK;
+                if(strcmp(argc[i],"normal")==0) compressType = PACK;
                 if(strcmp(argc[i],"shannon")==0) compressType = SHANNON;
                 if(strcmp(argc[i],"intelligent")==0) compressType = INTELLIGENT;
                 if(strcmp(argc[i],"rle")==0) compressType = RLE;
@@ -46,7 +46,7 @@ int main(int argv, char* argc[])
 
             if(dataProtectionFlag){
                 if(strcmp(argc[i],"hamming")==0) dataProtectionType = HAMMING;
-                if(strcmp(argc[i],"shannon")==0) dataProtectionType = REEDSOL;
+                if(strcmp(argc[i],"reedsol")==0) dataProtectionType = REEDSOL;
             }
 
             if(headerProtectionFlag){
