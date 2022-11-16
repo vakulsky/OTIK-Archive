@@ -36,12 +36,14 @@ private:
     HammingCode hammingCodeProtector;
     ReedSolomonWrapper reedSolomonWrapper;
 
-    const int protectedHeaderSize = 255 + 6;  // code_length + fec_length from ReedSolomonWrapper functions
+    const int protectedHeaderSize = HEADER_SZ + 6;  // code_length + fec_length from ReedSolomonWrapper functions
 
     static file_header BuildHeader(const string& fileName,
                                    CompressType compressType,
                                    ErrorCorrection errorCorrection,
-                                   int compressedDataSize);
+                                   int compressedDataSize,
+                                   int headerProtectionFlag);
+
     CompressType IntelligentArchive(const string& inFileName, const string& outFileName);
     static void WriteHeaderToFile(const file_header& header, const string& outFileName);
     static void CopyToFile(const string& from, long startPosition, int copySize, const string& to);

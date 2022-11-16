@@ -56,7 +56,8 @@ void Archiver::Compress(CompressType compressType, ErrorCorrection dataProtectio
         file_header header = BuildHeader(file,
                                          compressType,
                                          dataProtectionType,
-                                         GetFileSize(protectedDataFileName));
+                                         GetFileSize(protectedDataFileName),
+                                         headerProtectionType);
 
         //protect header if needed
         string headerFileName = "raw.header",
@@ -70,9 +71,9 @@ void Archiver::Compress(CompressType compressType, ErrorCorrection dataProtectio
                 break;
 
             case NONE:
-                //just copy to another file
-                protectedHeaderFileName = headerFileName;
+                //nothing to do
                 break;
+
             case HAMMING:
                 //NOT IMPLEMENTED YET
                 protectedHeaderFileName = headerFileName;
@@ -80,8 +81,10 @@ void Archiver::Compress(CompressType compressType, ErrorCorrection dataProtectio
                 break;
         }
 
-        //write header + filedata to archive file
-        CopyToFile(protectedHeaderFileName, 0, 0, archiveFileName);
+        CopyToFile(headerFileName, 0, 0, archiveFileName);
+        if(headerProtectionType != NONE){
+            CopyToFile(protectedHeaderFileName, 0, 0, archiveFileName);
+        }
         CopyToFile(protectedDataFileName, 0, 0, archiveFileName);
 
         RemoveFiles(vector<string>{
@@ -135,6 +138,12 @@ void Archiver::Extract(const string& inFileName){
             else{
                 cout << "Cannot recover header. EXITING..." << endl;
                 break;
+            }
+        }
+        else{
+            if(strcmp(header.header_protection_flag, "0") != 0) {
+                //header ok but there is still its protected copy in archive
+                currentPosition += protectedHeaderSize;
             }
         }
 
@@ -269,7 +278,8 @@ CompressType Archiver::IntelligentArchive(const string& inFileName, const string
 file_header Archiver::BuildHeader(const string& fileName,
                                   CompressType compressType,
                                   ErrorCorrection errorCorrection,
-                                  int compressedDataSize){
+                                  int compressedDataSize,
+                                  int headerProtectionFlag){
     file_header header{};
     ifstream file;
 
@@ -290,6 +300,7 @@ file_header Archiver::BuildHeader(const string& fileName,
         snprintf(header.data_size, DATASIZE_SZ, "%d", compressedDataSize);
         snprintf(header.algorithm, ALGORITHM_SZ, "%u", compressType);
         snprintf(header.errorcorr, ERRORCORR_SZ, "%u", errorCorrection);
+        snprintf(header.header_protection_flag, HEADERPROTECT_SZ, "%u", headerProtectionFlag);
     }
     return header;
 
@@ -315,6 +326,7 @@ void Archiver::WriteHeaderToFile(const file_header& header, const string& outFil
         outFile.write(header.data_size, DATASIZE_SZ);
         outFile.write(header.algorithm, ALGORITHM_SZ);
         outFile.write(header.errorcorr, ERRORCORR_SZ);
+        outFile.write(header.header_protection_flag, HEADERPROTECT_SZ);
         outFile.write(header.padding, PADDING_SZ);
     }
     outFile.close();
@@ -390,6 +402,7 @@ file_header Archiver::ReadHeader(const string& fileName, long position) {
         file.read(header.data_size, DATASIZE_SZ);
         file.read(header.algorithm, ALGORITHM_SZ);
         file.read(header.errorcorr, ERRORCORR_SZ);
+        file.read(header.header_protection_flag, HEADERPROTECT_SZ);
         file.read(header.padding, PADDING_SZ);   //going through padding
 
         /////
@@ -400,6 +413,7 @@ file_header Archiver::ReadHeader(const string& fileName, long position) {
         cout << "DEBUG | (data_size from file): " << string(header.data_size) << endl;
         cout << "DEBUG | (alg code from file): " << string(header.algorithm) << endl;
         cout << "DEBUG | (error corr code from file): " << string(header.errorcorr) << endl;
+        cout << "DEBUG | (header protect flag from file): " << string(header.header_protection_flag) << endl;
         /////
     }
 

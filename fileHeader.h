@@ -14,8 +14,9 @@
 #define FILESIZE_SZ 12
 #define ALGORITHM_SZ 5
 #define ERRORCORR_SZ 5
+#define HEADERPROTECT_SZ 5
 #define DATASIZE_SZ 10
-#define PADDING_SZ 30
+#define PADDING_SZ 25
 
 struct file_header {
     char signature[SIGNATURE_SZ];
@@ -24,6 +25,7 @@ struct file_header {
     char file_size[FILESIZE_SZ];
     char algorithm[ALGORITHM_SZ];
     char errorcorr[ERRORCORR_SZ];
+    char header_protection_flag[HEADERPROTECT_SZ];
     char data_size[DATASIZE_SZ];
     char padding[PADDING_SZ];
 
